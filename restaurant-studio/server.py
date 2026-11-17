@@ -94,6 +94,51 @@ def build_order(payload):
     }
 
 
+DATA_DIR = os.environ.get("DATA_DIR") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+DATA_FILE = os.path.join(DATA_DIR, "state.json")
+SAVE_LOCK = threading.Lock()
+
+
+def save_state():
+    """Writes published menus and orders to disk so they survive a server restart."""
+    with ORDERS_LOCK:
+        state = {"latest": PUBLISHED_MENU["data"], "menus": dict(PUBLISHED_BY_SLUG), "orders": list(ORDERS)}
+    with SAVE_LOCK:
+        try:
+            os.makedirs(DATA_DIR, exist_ok=True)
+            tmp = DATA_FILE + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(state, f)
+            os.replace(tmp, DATA_FILE)
+        except OSError as e:
+            print(f"Warning: could not save data: {e}")
+
+
+def load_state():
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            state = json.load(f)
+    except (OSError, ValueError):
+        return
+    PUBLISHED_MENU["data"] = state.get("latest")
+    PUBLISHED_BY_SLUG.update(state.get("menus") or {})
+    ORDERS.extend(state.get("orders") or [])
+    print(f" Loaded {len(PUBLISHED_BY_SLUG)} published menu(s) and {len(ORDERS)} order(s) from {DATA_FILE}")
+
+
+def public_base_url(handler):
+    """The address phones should use: PUBLIC_URL if set, else the host the browser used (cloud), else the LAN IP (local)."""
+    configured = os.environ.get("PUBLIC_URL", "").strip().rstrip("/")
+    if configured:
+        return configured
+    host = (handler.headers.get("X-Forwarded-Host") or handler.headers.get("Host") or "").split(",")[0].strip()
+    hostname = host.rsplit(":", 1)[0] if not host.startswith("[") else host
+    if host and hostname not in ("localhost", "127.0.0.1", "[::1]"):
+        proto = (handler.headers.get("X-Forwarded-Proto") or "http").split(",")[0].strip()
+        return f"{proto}://{host}"
+    return f"http://{get_lan_ip()}:{handler.server.server_address[1]}"
+
+
 def get_lan_ip():
     """Best-guess Wi-Fi/LAN address of this computer, so phones on the same network can reach it."""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -198,8 +243,8 @@ class RestaurantStudioHandler(SimpleHTTPRequestHandler):
                 PUBLISHED_MENU["data"] = data
                 slug = slugify((data.get("brand") or {}).get("name", ""))
                 PUBLISHED_BY_SLUG[slug] = data
-                port = self.server.server_address[1]
-                self.send_json_response({"success": True, "slug": slug, "url": f"http://{get_lan_ip()}:{port}/{slug}.html"})
+                save_state()
+                self.send_json_response({"success": True, "slug": slug, "url": f"{public_base_url(self)}/{slug}.html"})
             except Exception as e:
                 self.send_json_response({"success": False, "error": str(e)}, status=400)
             return
@@ -212,6 +257,7 @@ class RestaurantStudioHandler(SimpleHTTPRequestHandler):
                 with ORDERS_LOCK:
                     order["id"] = len(ORDERS) + 1
                     ORDERS.append(order)
+                save_state()
                 self.send_json_response({"success": True, "order": order})
             except Exception as e:
                 self.send_json_response({"success": False, "error": str(e)}, status=400)
@@ -229,6 +275,7 @@ class RestaurantStudioHandler(SimpleHTTPRequestHandler):
                     if order is None:
                         raise ValueError("Order not found")
                     order["status"] = status
+                save_state()
                 self.send_json_response({"success": True, "order": order})
             except Exception as e:
                 self.send_json_response({"success": False, "error": str(e)}, status=400)
@@ -575,7 +622,8 @@ def run_server(port=PORT):
             httpd.server_close()
 
 if __name__ == "__main__":
-    port = PORT
+    load_state()
+    port = int(os.environ.get("PORT", PORT))  # cloud hosts like Render pass the port in $PORT
     if len(sys.argv) > 1:
         try:
             port = int(sys.argv[1])
