@@ -1,5 +1,4 @@
 /* GourmetStudio — Human-Crafted Design Workshop CSS */
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Cinzel:wght@600;700;800;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&family=Oswald:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Volkhov:ital,wght@0,700;1,400&display=swap');
 
 :root {
   --studio-bg: #f8f6f1;
@@ -593,81 +592,143 @@ textarea.ms-field{resize:vertical;font-family:var(--font-ui)}
 @media (max-width:480px){.shop-strip{flex-direction:column;text-align:center}}
 
 /* =========================================================
-   COLOURFUL PROFESSIONAL THEME (overrides the neutral shell)
+   EDITORIAL THEME — warm ivory paper, forest-green ink,
+   Newsreader display + Inter UI. One accent, no gradients.
+   (Replaces the earlier "colourful" passes.)
    ========================================================= */
 :root{
-  --paper:#FBF7F4;
-  --surface-2:#F5EEF0;
-  --accent:#E8461E;            /* saffron-orange */
-  --accent-2:#D6246E;          /* raspberry */
-  --accent-3:#7C3AED;          /* violet */
-  --accent-soft:#FFF0EA;
-  --grad:linear-gradient(135deg,#FF8A1F 0%,#F0442B 45%,#D6246E 100%);
-  --grad-cool:linear-gradient(135deg,#7C3AED 0%,#D6246E 100%);
-  --ring:0 0 0 2px #fff,0 0 0 4px #F0442B;
-  --shadow-2:0 14px 34px -14px rgba(214,36,110,.28);
+  --paper:#FBF9F4;
+  --surface:#FFFFFF;
+  --surface-2:#F3F0E8;
+  --ink:#16201B;
+  --ink-2:#3C4640;
+  --muted:#6E746F;
+  --line:#E7E2D6;
+  --line-2:#D5CFC0;
+  --accent:#1F4D3A;
+  --accent-hover:#173B2C;
+  --accent-soft:#E9F0EC;
+  --accent-2:#1F4D3A;
+  --accent-3:#1F4D3A;
+  --on-accent:#FFFFFF;
+  --gold:#A8834A;
+  --ok:#2F7A55;
+  --grad:var(--accent);
+  --grad-cool:var(--accent);
+  --ring:0 0 0 2px var(--paper),0 0 0 4px var(--accent);
+  --shadow-1:0 1px 2px rgba(22,32,27,.06);
+  --shadow-2:0 12px 28px -14px rgba(22,32,27,.18);
+  --font-display:'Newsreader',Georgia,'Times New Roman',serif;
+  --font-ui:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --r:12px;
+  --r-btn:8px;
 }
-.app-body{background:
-  radial-gradient(900px 420px at 100% -80px,rgba(255,138,31,.16),transparent 70%),
-  radial-gradient(700px 380px at -10% 0,rgba(124,58,237,.10),transparent 70%),
-  var(--paper)}
-.app-bar{background:rgba(251,247,244,.86)}
-.brandmark{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:400}
-.eyebrow{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;display:inline-block}
-.segs i.done{background:linear-gradient(90deg,#FF8A1F,#F0442B)}
-.segs i.cur{background:var(--accent-2)}
-.foot-msg{color:var(--accent-2)}
 
-/* primary buttons */
-.btn-next,.ui-btn-primary,.ms-btn-primary,.ms-row-primary{background:var(--grad)!important;border-color:transparent!important;color:#fff!important;box-shadow:0 10px 24px -10px rgba(240,68,43,.65)}
-.btn-next:hover,.ui-btn-primary:hover,.ms-btn-primary:hover,.ms-row-primary:hover{filter:brightness(1.06) saturate(1.05);background:var(--grad)!important}
-.ms-row-primary .ms-ico{background:rgba(255,255,255,.2)!important}
-.ms-row-primary small{color:rgba(255,255,255,.85)!important}
+/* ---------- base + type scale ---------- */
+.app-body{background:var(--paper);color:var(--ink);font-family:var(--font-ui);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.display{font-family:var(--font-display);font-weight:500;letter-spacing:-.015em}
+.page-title,.q-title{font-family:var(--font-display);font-weight:500;letter-spacing:-.015em;font-size:clamp(2rem,3.4vw,2.75rem);line-height:1.1;color:var(--ink)}
+#tab-logos:not(.wiz-single) .q-title{font-size:clamp(1.75rem,3vw,2.3rem)}
+.q-sub{font-size:1rem;color:var(--muted)}
+.eyebrow{font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);background:none;-webkit-background-clip:border-box;background-clip:border-box;display:block;margin:0 0 .75rem}
+.wiz-q > label,.wiz-q > span.block,.ms-lab,.my-group{font-size:.7rem;font-weight:600;letter-spacing:.12em;color:var(--muted)}
 
-/* selected / hover states in brand colour */
-.cuisine-tile.sel,.my-choice.selected,.style-card.selected,.v-card.selected,.ms-tpl.sel{border-color:transparent;box-shadow:var(--ring)}
-.my-choice:hover,.style-card:hover{border-color:#F7B9A6}
-.style-card.selected .style-card-check,.v-card.selected .v-pick{background:var(--grad);border-color:transparent;color:#fff}
-.ms-tab[aria-selected=true]{color:var(--accent)}
-.ms-seg button[aria-pressed=true]{color:var(--accent)}
-.ms-toggle input:checked + i{background:var(--grad)}
-.ms-live i{background:#16a34a}
-.ms-row:hover,.ms-field:focus,.ms-btn:hover,.ui-btn:hover{border-color:var(--accent)}
-#tab-logos .wiz-q input[type=text]:focus{border-bottom-color:var(--accent)}
+/* ---------- header ---------- */
+.app-bar{background:rgba(251,249,244,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.app-bar::after{content:none}
+.brandmark{display:inline-flex;align-items:center;gap:.55rem;font-family:var(--font-display);font-size:1.35rem;font-weight:500;letter-spacing:-.01em;color:var(--ink);background:none;-webkit-background-clip:border-box;background-clip:border-box}
+.brandmark svg{width:22px;height:22px;color:var(--accent);flex:none}
+.segs i{height:3px}
+.segs i.done{background:var(--accent)}
+.segs i.cur{background:var(--gold)}
+.stepper-meta{font-weight:600;letter-spacing:.1em}
+.ab-mini{border-radius:8px}
+
+/* ---------- footer ---------- */
+.app-foot:not(.inline){background:rgba(255,255,255,.95);border-top:1px solid var(--line)}
+.app-foot:not(.inline)::before{content:none}
+.foot-msg{color:var(--accent);font-weight:500}
+
+/* ---------- buttons ---------- */
+.btn-next,.ui-btn-primary,.ms-btn-primary,.ms-row-primary{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--on-accent)!important;box-shadow:0 1px 2px rgba(22,32,27,.12)}
+.btn-next:hover,.ui-btn-primary:hover,.ms-btn-primary:hover,.ms-row-primary:hover{background:var(--accent-hover)!important;filter:none}
+.btn-next{border-radius:var(--r-btn);font-size:.875rem;font-weight:600;padding:.8rem 1.4rem;letter-spacing:.01em}
+.btn-next:hover{transform:none}
+.ui-btn,.ms-btn,.v-pick{border-radius:var(--r-btn);font-weight:600}
+.ms-btn{font-size:.85rem}
+.ui-btn:hover,.ms-btn:hover,.v-pick:hover,.ms-row:hover,.ms-zoom button:hover{border-color:var(--accent)}
+.btn-text{font-weight:500}
+.ms-row-primary .ms-ico{background:rgba(255,255,255,.16)!important;color:var(--on-accent)!important}
+.ms-row-primary small{color:rgba(255,255,255,.8)!important}
+#tab-menu .studio-card button[class*="bg-[#1c1917]"],#tab-menu .studio-card label[class*="bg-[#1c1917]"]{background:var(--accent);border-color:var(--accent);border-radius:var(--r-btn)}
+#tab-menu .studio-card button[class*="bg-[#1c1917]"]:hover,#tab-menu .studio-card label[class*="bg-[#1c1917]"]:hover{background:var(--accent-hover)}
+#tab-menu .studio-card button[class*="bg-white"]{border-radius:var(--r-btn)}
+
+/* ---------- question input: boxed field ---------- */
+#tab-logos .wiz-q input[type=text]{background:var(--surface);border:1px solid var(--line-2);border-radius:10px;padding:.85rem 1rem;font-family:var(--font-ui);font-size:1.35rem;font-weight:500;letter-spacing:-.005em;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+#tab-logos .wiz-q input[type=text]::placeholder{color:#A9ADA6;font-weight:400}
+#tab-logos .wiz-q input[type=text]:focus{outline:none;background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.wiz-hint kbd{border-radius:4px}
+
+/* ---------- selection + hover states ---------- */
+.cuisine-tile,.my-choice,.style-card,.v-card,.ms-tpl{background:var(--surface)}
+.cuisine-tile:hover,.my-choice:hover,.style-card:hover{border-color:var(--line-2);box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.cuisine-tile.sel,.my-choice.selected,.style-card.selected,.v-card.selected,.ms-tpl.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);background:var(--surface)}
+.cuisine-tile.sel .cuisine-label,.style-card.selected .style-card-title{color:var(--accent)}
+.style-card.selected .style-card-check,.v-card.selected .v-pick{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.style-card-art,.v-art{background:var(--surface-2)}
+.my-choice-icon,.ms-ico{background:var(--accent-soft);color:var(--accent)}
+.my-choice{border-radius:14px}
 #wiz-q-5 .flex > button.sel{box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--accent)}
-
-/* colourful choice icons */
-.my-choice-icon{background:var(--accent-soft);color:var(--accent)}
-#askNo .my-choice-icon,#hasMenuNo .my-choice-icon,#wantNo .my-choice-icon{background:#F3EBFF;color:var(--accent-3)}
-.ms-ico{background:var(--accent-soft);color:var(--accent)}
+.v-head h3{font-family:var(--font-display);font-weight:500;color:var(--ink)}
 
 /* choice cards with a photo banner */
-.my-choice-img{display:block;width:calc(100% + 3.2rem);margin:-1.6rem -1.6rem .6rem;height:120px;border-radius:19px 19px 0 0;background:#eee center/cover no-repeat;position:relative}
-.my-choice-img::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.25))}
+.my-choice-img{display:block;width:calc(100% + 3.2rem);margin:-1.6rem -1.6rem .6rem;height:120px;border-radius:13px 13px 0 0;background:#eee center/cover no-repeat;position:relative}
+.my-choice-img::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.18))}
 .my-choice:has(.my-choice-img){overflow:hidden}
 
 /* cuisine tiles with photos */
 .cuisine-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
-.cuisine-tile{flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden}
+.cuisine-tile{flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden;border-radius:var(--r);font-weight:600}
 .cuisine-photo{display:block;height:92px;background:#eee center/cover no-repeat;position:relative}
-.cuisine-photo .cuisine-ico{position:absolute;left:10px;bottom:-16px;width:34px;height:34px;background:#fff;color:var(--accent);box-shadow:0 4px 12px rgba(0,0,0,.15)}
-.cuisine-tile.sel .cuisine-photo .cuisine-ico{background:var(--grad);color:#fff}
+.cuisine-photo .cuisine-ico{position:absolute;left:10px;bottom:-16px;width:34px;height:34px;background:var(--surface);color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.cuisine-tile.sel .cuisine-photo .cuisine-ico{background:var(--accent);color:var(--on-accent)}
 .cuisine-label{display:block;padding:1.35rem .9rem .85rem}
 @media (max-width:640px){.cuisine-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cuisine-photo{height:78px}}
 
 /* mockup photo backdrops */
 .mock-photo{background-size:cover!important;background-position:center!important}
+#tab-mockups .studio-card{border:1px solid var(--line);box-shadow:var(--shadow-1)}
+#tab-mockups .studio-card h3{color:var(--ink)}
+#tab-mockups .studio-card h3 svg{color:var(--accent)!important}
 
-/* =========================================================
-   LAST PAGE: download section (kept at the very end)
-   ========================================================= */
-.dl-section{margin-top:2.5rem;border-radius:22px;padding:clamp(1.25rem,3vw,2rem);background:var(--grad);color:#fff;box-shadow:0 20px 40px -20px rgba(214,36,110,.55)}
-.dl-section h2{font-size:clamp(1.7rem,3vw,2.3rem);margin:0;line-height:1.1}
-.dl-section > p{margin:.4rem 0 1.25rem;opacity:.9;font-size:.95rem}
+/* ---------- menu studio chrome ---------- */
+.ms-panel{border:1px solid var(--line);box-shadow:var(--shadow-1);border-radius:14px}
+.ms-tabs{background:var(--surface-2);border-bottom:1px solid var(--line)}
+.ms-tab svg{color:var(--ink-2)}
+.ms-tab[aria-selected=true]{background:var(--surface);color:var(--accent);box-shadow:var(--shadow-1)}
+.ms-tab[aria-selected=true] svg{color:var(--accent)}
+.ms-seg button[aria-pressed=true]{color:var(--accent)}
+.ms-toggle input:checked + i{background:var(--accent)}
+.ms-field:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.ms-summary{background:var(--surface-2);border-color:var(--line)}
+.ms-num{color:var(--ink);font-weight:500}
+.ms-canvas{border:1px solid var(--line);box-shadow:none;border-radius:14px}
+.ms-ctool{background:var(--surface)}
+.ms-live i{background:var(--ok);box-shadow:0 0 0 3px rgba(47,122,85,.15)}
+.ms-stage{background-color:var(--surface-2);background-image:radial-gradient(var(--line-2) 1px,transparent 1px)}
+.ms-tpl:hover{border-color:var(--line-2)}
+.ms-head-actions:empty{display:none}
+#msDlSection{margin-top:1.75rem}
+
+/* ---------- download section ---------- */
+.dl-section{margin-top:2.5rem;border-radius:16px;padding:clamp(1.25rem,3vw,2rem);background:var(--accent);color:var(--on-accent);box-shadow:none}
+.dl-section h2{font-family:var(--font-display);font-weight:500;font-size:clamp(1.6rem,2.8vw,2.1rem);margin:0;line-height:1.15}
+.dl-section > p{margin:.4rem 0 1.25rem;opacity:.85;font-size:.95rem}
 .dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.75rem}
-.dl-item{display:flex;align-items:center;gap:.75rem;text-align:left;background:rgba(255,255,255,.96);color:var(--ink);border:0;border-radius:14px;padding:.85rem .95rem;cursor:pointer;font-family:var(--font-ui);transition:transform .15s,box-shadow .15s}
-.dl-item:hover{transform:translateY(-2px);box-shadow:0 10px 20px -10px rgba(0,0,0,.35)}
-.dl-item b{display:block;font-size:.88rem}
+.dl-item{display:flex;align-items:center;gap:.75rem;text-align:left;background:var(--surface);color:var(--ink);border:0;border-radius:10px;padding:.85rem .95rem;cursor:pointer;font-family:var(--font-ui);transition:transform .15s,box-shadow .15s}
+.dl-item:hover{transform:translateY(-1px);box-shadow:0 8px 18px -10px rgba(0,0,0,.35)}
+.dl-item b{display:block;font-size:.88rem;font-weight:600}
 .dl-item small{display:block;font-size:.74rem;color:var(--muted)}
 .dl-item .ms-ico{background:var(--accent-soft);color:var(--accent)}
 .dl-item.hidden{display:none}
@@ -689,7 +750,7 @@ textarea.ms-field{resize:vertical;font-family:var(--font-ui)}
 .v-section{overflow:hidden;padding:4px 0 6px;margin-left:-4px;margin-right:-4px;padding-left:4px;padding-right:4px}
 .v-grid.cf3d{display:block!important;position:relative;perspective:1200px;touch-action:pan-y;user-select:none;margin-top:.5rem}
 .cf3d > .v-card{position:absolute;left:50%;top:10px;width:min(64vw,250px);background:#fff;transition:transform .55s cubic-bezier(.2,.8,.2,1),opacity .55s,filter .55s,box-shadow .3s;will-change:transform;cursor:grab;box-shadow:0 14px 30px -18px rgba(20,23,27,.35)}
-.cf3d > .v-card.cf-front{cursor:default;box-shadow:0 26px 50px -22px rgba(214,36,110,.55),var(--ring)}
+.cf3d > .v-card.cf-front{cursor:default;box-shadow:0 22px 44px -22px rgba(22,32,27,.4),var(--ring)}
 .cf3d > .v-card:not(.cf-front) .v-row{opacity:.6}
 .cf3d > .v-card img,.cf3d > .v-card svg{pointer-events:none}
 
@@ -703,61 +764,6 @@ textarea.ms-field{resize:vertical;font-family:var(--font-ui)}
 .cfx-track{display:flex!important;gap:1.25rem;transition:transform .6s cubic-bezier(.2,.8,.2,1);will-change:transform}
 .cfx-track > *{flex:0 0 min(86vw,580px);min-width:0;transform:scale(.88);opacity:.45;filter:saturate(.55);transition:transform .6s,opacity .6s,filter .6s;cursor:pointer}
 .cfx-track > .cfx-on{transform:none;opacity:1;filter:none;cursor:default}
-
-/* =========================================================
-   COLOUR PASS 2: richer, more colourful UI
-   ========================================================= */
-.app-body{background:
-  radial-gradient(800px 400px at 105% -60px,rgba(255,138,31,.22),transparent 70%),
-  radial-gradient(700px 420px at -12% 10%,rgba(124,58,237,.14),transparent 70%),
-  radial-gradient(600px 400px at 50% 110%,rgba(20,184,166,.10),transparent 70%),
-  var(--paper);background-attachment:fixed}
-.app-bar{border-bottom:0}
-.app-bar::after{content:"";display:block;height:3px;background:linear-gradient(90deg,#FF8A1F,#F0442B,#D6246E,#7C3AED)}
-.app-foot:not(.inline){border-top:0}
-.app-foot:not(.inline)::before{content:"";display:block;height:3px;background:linear-gradient(90deg,#7C3AED,#D6246E,#F0442B,#FF8A1F)}
-
-/* gradient accent bar under every page title */
-.q-title::after,.page-title::after{content:"";display:block;width:68px;height:4px;border-radius:4px;background:var(--grad);margin-top:.8rem}
-.v-head h3{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-
-/* choice cards and tiles */
-.my-choice{background:linear-gradient(180deg,#fff,#FFF8F4)}
-.my-choice:hover{box-shadow:0 18px 36px -18px rgba(214,36,110,.4)}
-.my-choice-title{color:var(--ink)}
-.cuisine-tile{background:linear-gradient(180deg,#fff,#FFF7F2)}
-.cuisine-tile:hover{box-shadow:0 14px 28px -16px rgba(240,68,43,.45)}
-.cuisine-tile.sel .cuisine-label{color:var(--accent)}
-.style-card{background:linear-gradient(180deg,#fff,#FFF6F1)}
-.style-card-art{background:#FFF1E8}
-.style-card.selected .style-card-title{color:var(--accent)}
-.v-card{background:linear-gradient(180deg,#fff,#FFF7F3)}
-
-/* menu studio: colour-coded tabs */
-.ms-panel{border:0;box-shadow:0 18px 40px -24px rgba(214,36,110,.45)}
-.ms-tabs{background:linear-gradient(135deg,#FFF1E6,#FDE7F1 60%,#EFE7FF);border-bottom:0}
-.ms-tab:nth-child(1) svg{color:#F0442B}
-.ms-tab:nth-child(2) svg{color:#D6246E}
-.ms-tab:nth-child(3) svg{color:#7C3AED}
-.ms-tab:nth-child(4) svg{color:#0D9488}
-.ms-tab[aria-selected=true]{background:#fff;box-shadow:0 6px 14px -8px rgba(214,36,110,.5)}
-.ms-lab{color:var(--accent-2)}
-.ms-field:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(240,68,43,.14)}
-.ms-summary{background:linear-gradient(135deg,#FFF1E6,#FDE7F1)}
-.ms-num{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.ms-canvas{border:0;box-shadow:0 18px 40px -26px rgba(124,58,237,.45)}
-.ms-stage{background-color:#FBF0F3;background-image:radial-gradient(rgba(214,36,110,.18) 1px,transparent 1px)}
-.ms-ctool{background:linear-gradient(90deg,#fff,#FFF6F1)}
-.ms-tpl:hover{border-color:#F7B9A6}
-#msDlSection{margin-top:1.75rem}
-
-/* mockups */
-#tab-mockups .studio-card{border:0;box-shadow:0 18px 40px -24px rgba(214,36,110,.4)}
-#tab-mockups .studio-card h3 svg{color:var(--accent)!important}
-#tab-mockups .studio-card h3{color:var(--ink)}
-
-/* the old menu dropdown is gone; hide any leftover styles */
-.ms-head-actions:empty{display:none}
 
 /* =========================================================
    DARK THEME (default). Light theme = no data-theme / "light".
@@ -776,79 +782,57 @@ textarea.ms-field{resize:vertical;font-family:var(--font-ui)}
   .active-brand .ab-mini,.active-brand .ab-text{display:none}
 }
 
+/* carousel polish for the editorial theme */
+.cf3d > .v-card{background:var(--surface);box-shadow:0 14px 30px -18px rgba(22,32,27,.3)}
+.cf3d > .v-card.cf-front{box-shadow:0 22px 44px -22px rgba(22,32,27,.4),var(--ring)}
+.cc-arrow{border:1px solid var(--line);box-shadow:var(--shadow-1)}
+.cc-arrow:hover{color:var(--accent)}
+.cc-dots button{background:var(--line-2)}
+.cc-dots button[aria-current=true]{background:var(--accent)}
+
+/* =========================================================
+   DARK THEME — editorial dark. Light is the default.
+   Menu boards, logos, mockup scenes and QR codes keep their own colours.
+   ========================================================= */
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --paper:#100E14;
-  --surface:#1B1820;
-  --surface-2:#15121A;
-  --ink:#F5F0EB;
-  --ink-2:#D9D2CB;
-  --muted:#A39A94;
-  --line:#2D2833;
-  --line-2:#3F3846;
-  --accent:#FF6B3D;
-  --accent-2:#FF4F93;
-  --accent-3:#A78BFA;
-  --accent-soft:rgba(255,107,61,.15);
-  --ring:0 0 0 2px #100E14,0 0 0 4px #FF6B3D;
+  --paper:#111613;
+  --surface:#18201B;
+  --surface-2:#141B17;
+  --ink:#EEF0EA;
+  --ink-2:#CDD3CC;
+  --muted:#9AA39C;
+  --line:#26302A;
+  --line-2:#334037;
+  --accent:#7FB89A;
+  --accent-hover:#93C6AB;
+  --accent-soft:rgba(127,184,154,.14);
+  --accent-2:#7FB89A;
+  --accent-3:#7FB89A;
+  --on-accent:#0E1511;
+  --gold:#C9A66B;
+  --ok:#6FBF8E;
+  --ring:0 0 0 2px var(--paper),0 0 0 4px var(--accent);
   --shadow-1:0 1px 2px rgba(0,0,0,.4);
-  --shadow-2:0 16px 36px -14px rgba(0,0,0,.7);
+  --shadow-2:0 16px 32px -16px rgba(0,0,0,.7);
 }
-:root[data-theme="dark"] .app-body{background:
-  radial-gradient(800px 420px at 105% -60px,rgba(255,107,61,.20),transparent 70%),
-  radial-gradient(700px 440px at -12% 8%,rgba(167,139,250,.16),transparent 70%),
-  radial-gradient(640px 420px at 50% 112%,rgba(45,212,191,.10),transparent 70%),
-  var(--paper);background-attachment:fixed;color:var(--ink)}
-:root[data-theme="dark"] .app-bar{background:rgba(16,14,20,.82)}
-:root[data-theme="dark"] .app-foot:not(.inline){background:rgba(21,18,26,.92)}
-:root[data-theme="dark"] .segs i:not(.done):not(.cur){background:#2F2A35}
-:root[data-theme="dark"] .stepper-meta .sep{background:#4A4350}
-:root[data-theme="dark"] #tab-logos .wiz-q input[type=text]::placeholder{color:#5F5763}
+:root[data-theme="dark"] .app-body{background:var(--paper);color:var(--ink)}
+:root[data-theme="dark"] .app-bar{background:rgba(17,22,19,.9)}
+:root[data-theme="dark"] .app-foot:not(.inline){background:rgba(20,27,23,.95)}
+:root[data-theme="dark"] .segs i:not(.done):not(.cur){background:var(--line-2)}
+:root[data-theme="dark"] .stepper-meta .sep{background:var(--line-2)}
+:root[data-theme="dark"] #tab-logos .wiz-q input[type=text]::placeholder{color:#5C665F}
 :root[data-theme="dark"] .ab-mini{border-color:var(--line-2)}
-
-/* cards, tiles, choices */
-:root[data-theme="dark"] .my-choice,
-:root[data-theme="dark"] .cuisine-tile,
-:root[data-theme="dark"] .style-card,
-:root[data-theme="dark"] .v-card{background:linear-gradient(180deg,#1E1A24,#19161E);border-color:var(--line)}
-:root[data-theme="dark"] .cf3d > .v-card{background:#1E1A24;box-shadow:0 18px 36px -18px rgba(0,0,0,.8)}
-:root[data-theme="dark"] .cf3d > .v-card.cf-front{box-shadow:0 26px 50px -20px rgba(255,79,147,.45),var(--ring)}
-:root[data-theme="dark"] .stk > .style-card{box-shadow:0 18px 40px -18px rgba(0,0,0,.85)}
-:root[data-theme="dark"] .my-choice:hover{box-shadow:0 18px 36px -18px rgba(255,79,147,.35)}
-:root[data-theme="dark"] .cuisine-tile:hover{box-shadow:0 14px 28px -14px rgba(255,107,61,.4)}
-:root[data-theme="dark"] .cuisine-photo .cuisine-ico{background:#1B1820}
-:root[data-theme="dark"] .style-card-art{background:#241F29}
-:root[data-theme="dark"] .style-card-check{background:rgba(27,24,32,.9);border-color:var(--line-2)}
-:root[data-theme="dark"] .v-art{background:#241F29}
-:root[data-theme="dark"] #askNo .my-choice-icon,:root[data-theme="dark"] #hasMenuNo .my-choice-icon,:root[data-theme="dark"] #wantNo .my-choice-icon{background:rgba(167,139,250,.16)}
-:root[data-theme="dark"] #wiz-q-5 .flex > button.sel{box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--accent)}
-
-/* carousel controls */
-:root[data-theme="dark"] .cc-arrow{background:#231F29;color:var(--ink);box-shadow:0 8px 22px -8px rgba(0,0,0,.8)}
-:root[data-theme="dark"] .cc-dots button:not([aria-current=true]){background:#3A3440}
-
-/* menu studio */
-:root[data-theme="dark"] .ms-panel{background:var(--surface);box-shadow:0 18px 40px -22px rgba(0,0,0,.8)}
-:root[data-theme="dark"] .ms-tabs{background:linear-gradient(135deg,#2A1C1E,#2A1A26 60%,#221C33)}
-:root[data-theme="dark"] .ms-tab[aria-selected=true]{background:#110F15;box-shadow:none}
-:root[data-theme="dark"] .ms-summary{background:linear-gradient(135deg,#2A1C1E,#2A1A26);border-color:var(--line)}
-:root[data-theme="dark"] .ms-canvas{background:#15121A;box-shadow:0 18px 40px -24px rgba(0,0,0,.9)}
-:root[data-theme="dark"] .ms-ctool{background:var(--surface);border-color:var(--line)}
-:root[data-theme="dark"] .ms-stage{background-color:#120F16;background-image:radial-gradient(rgba(255,79,147,.16) 1px,transparent 1px)}
-:root[data-theme="dark"] .ms-zoom button{background:#231F29}
-:root[data-theme="dark"] .ms-seg button[aria-pressed=true]{background:#2A2530}
-:root[data-theme="dark"] .ms-tpl{background:#1E1A24}
-:root[data-theme="dark"] .ms-field{background:#141118}
-:root[data-theme="dark"] .ms-toggle i::after{background:#F5F0EB}
-
-/* download sections keep the bright gradient; items go dark */
-:root[data-theme="dark"] .dl-item{background:rgba(20,17,24,.9);color:var(--ink)}
-:root[data-theme="dark"] .dl-item small{color:#C9C0BA}
-:root[data-theme="dark"] .dl-item .ms-ico{background:rgba(255,255,255,.08);color:#FFB08F}
-
-/* mockups page */
-:root[data-theme="dark"] #tab-mockups .studio-card{background:var(--surface);box-shadow:0 18px 40px -24px rgba(0,0,0,.85)}
-:root[data-theme="dark"] #tab-mockups .studio-card [class*="bg-[#fbfaf7]"]{background:#241F29;border-color:var(--line)}
+:root[data-theme="dark"] .style-card-check{background:rgba(24,32,27,.9);border-color:var(--line-2)}
+:root[data-theme="dark"] .cc-arrow{background:var(--surface);color:var(--ink)}
+:root[data-theme="dark"] .ms-tab[aria-selected=true]{background:var(--paper)}
+:root[data-theme="dark"] .ms-seg button[aria-pressed=true]{background:var(--surface)}
+:root[data-theme="dark"] .ms-field{background:var(--surface-2)}
+:root[data-theme="dark"] .ms-toggle i::after{background:#EEF0EA}
+:root[data-theme="dark"] .dl-section{background:#1F4D3A;color:#fff}
+:root[data-theme="dark"] .dl-item{background:var(--surface);color:var(--ink)}
+:root[data-theme="dark"] .dl-item small{color:var(--muted)}
+:root[data-theme="dark"] #tab-mockups .studio-card [class*="bg-[#fbfaf7]"]{background:var(--surface-2);border-color:var(--line)}
 
 /* tailwind colour classes inside the app's own panels and pop-ups (NOT the menu board) */
 :root[data-theme="dark"] :is(#rawTextModal,#itemEditorModal,#qrMenuModal,#tab-mylogo,#tab-menuask,#tab-logos,.ms-panel,#tab-styles) [class*="bg-white"]:not(#qrCard),
@@ -859,7 +843,7 @@ textarea.ms-field{resize:vertical;font-family:var(--font-ui)}
 :root[data-theme="dark"] :is(#rawTextModal,#itemEditorModal,#qrMenuModal,#tab-mylogo,#tab-menuask,#tab-logos,.ms-panel) [class*="text-[#44403c]"]{color:var(--ink-2)!important}
 :root[data-theme="dark"] :is(#rawTextModal,#itemEditorModal,#qrMenuModal,#tab-mylogo,#tab-menuask,#tab-logos,.ms-panel) :is([class*="text-[#78716c]"],[class*="text-[#a8a29e]"],[class*="text-[#57534e]"]){color:var(--muted)!important}
 :root[data-theme="dark"] :is(#rawTextModal,#itemEditorModal,#qrMenuModal,#tab-mylogo,#tab-menuask,#tab-logos,.ms-panel) :is([class*="border-[#d6d3cb]"],[class*="border-[#e7e5e0]"],[class*="border-[#f0eee6]"],[class*="border-[#e0ddd5]"]){border-color:var(--line-2)!important}
-:root[data-theme="dark"] :is(#rawTextModal,#itemEditorModal,#qrMenuModal) [class*="bg-[#1c1917]"]{background:var(--grad)!important;color:#fff!important}
+:root[data-theme="dark"] :is(#rawTextModal,#itemEditorModal,#qrMenuModal) [class*="bg-[#1c1917]"]{background:var(--accent)!important;color:var(--on-accent)!important}
 :root[data-theme="dark"] :is(#rawTextModal,#itemEditorModal,#qrMenuModal) textarea,
 :root[data-theme="dark"] :is(#rawTextModal,#itemEditorModal,#qrMenuModal) input{color:var(--ink)}
 :root[data-theme="dark"] #qrMenuModal [class*="bg-amber-50"]{background:rgba(245,158,11,.12)!important;color:#FCD34D!important;border-color:rgba(245,158,11,.35)!important}

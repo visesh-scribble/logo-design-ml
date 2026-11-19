@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* React mounts into #root: let its children (top bar, page, footer) sit directly in the page layout as before */
+#root { display: contents; }

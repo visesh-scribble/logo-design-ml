@@ -95,15 +95,43 @@ http://localhost:8080
 
 ## 📁 Project Architecture
 ```
-restaurant-studio/
-├── server.py              # Multithreaded HTTP & REST API server
-├── ml.py                  # Naive Bayes dietary tagger + hybrid dish recommender
-├── start.bat              # One-click Windows runner
-├── public/
-│   ├── index.html         # Responsive Single Page Application UI
-│   ├── app.js             # Core SVG generator, parsers & canvas engine
-│   └── styles.css         # Print stylesheets, textures, animations
-└── samples/
-    ├── bistro_menu.csv    # Sample casual fine-dining CSV menu
-    └── italian_trattoria.xlsx # Sample multi-course Italian XLSX menu
+restaurant-studio-wizard/
+├── frontend/                  # React source for the website (Vite + React 18 + Tailwind)
+│   ├── index.html             # Studio wizard page
+│   ├── m.html                 # Phone menu page (also served as /<restaurant>.html)
+│   ├── orders.html            # Kitchen orders page
+│   └── src/
+│       ├── shared/            # Logo generators, sample menus, QR / file helpers
+│       ├── studio/            # The wizard: store.js (app state), steps.js (flow), components/
+│       ├── phone/             # PhoneMenu.jsx
+│       └── kitchen/           # Orders.jsx
+└── restaurant-studio/
+    ├── server.py              # Multithreaded HTTP & REST API server
+    ├── ml.py                  # Naive Bayes dietary tagger + hybrid dish recommender
+    ├── start.bat              # One-click Windows runner
+    ├── public/                # BUILT website (made by `npm run build` in frontend/, do not edit by hand)
+    └── samples/
+        ├── bistro_menu.csv
+        └── italian_trattoria.xlsx
+```
+
+## 🛠️ Changing the website (React)
+The built files are committed in `public/`, so running the app (and deploying to Render) still needs **only Python**.
+Node.js 18+ is needed only when you change the frontend:
+
+```powershell
+# terminal 1: the API
+cd restaurant-studio
+python server.py
+
+# terminal 2: the website with instant reload
+cd frontend
+npm install
+npm run dev          # open http://localhost:5173  (API calls are forwarded to :8080)
+```
+
+When you are happy, build it into `restaurant-studio/public/` and commit the result:
+```powershell
+cd frontend
+npm run build
 ```

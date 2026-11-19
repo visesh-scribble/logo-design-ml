@@ -1,0 +1,26 @@
+    :root { --ink: #1c1917; --muted: #78716c; --line: #e7e5e0; --page: #f5f4ef; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--page); color: var(--ink); }
+    header { background: #1c1917; color: #fff; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    header h1 { margin: 0; font-family: Georgia, serif; font-size: 22px; }
+    .live { font-size: 12px; color: #a8a29e; display: flex; align-items: center; gap: 6px; }
+    .live i { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block; }
+    .tabs { display: flex; gap: 8px; padding: 14px 20px 0; flex-wrap: wrap; }
+    .tabs button { border: 1px solid var(--line); background: #fff; padding: 7px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .tabs button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+    #list { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; padding: 16px 20px 40px; }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; }
+    .card.new { border: 2px solid #f59e0b; box-shadow: 0 0 0 4px #fef3c7; }
+    .top { display: flex; justify-content: space-between; align-items: baseline; }
+    .id { font-size: 22px; font-weight: 900; }
+    .table { font-size: 15px; font-weight: 800; background: #1c1917; color: #fff; padding: 3px 10px; border-radius: 8px; }
+    .meta { color: var(--muted); font-size: 12px; margin: 4px 0 8px; }
+    ul { list-style: none; padding: 0; margin: 0 0 8px; }
+    li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed var(--line); font-size: 14px; }
+    li b { margin-right: 6px; }
+    .note { background: #fef3c7; color: #92400e; font-size: 13px; padding: 6px 8px; border-radius: 8px; margin-bottom: 8px; }
+    .total { display: flex; justify-content: space-between; font-weight: 800; margin-bottom: 10px; }
+    .btns { display: flex; gap: 6px; margin-top: auto; }
+    .btns button { flex: 1; border: 0; border-radius: 10px; padding: 9px 6px; font-weight: 800; font-size: 12px; cursor: pointer; background: #f5f4ef; color: var(--ink); }
+    .btns button.cur { background: var(--ink); color: #fff; }
+    .empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 60px 0; }
