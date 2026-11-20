@@ -1,8 +1,8 @@
-import { Image, PenTool, Printer, Tv, FileSpreadsheet, QrCode, MapPin, ChefHat, ExternalLink } from "lucide-react";
+import { Image, PenTool, Printer, Tv, FileSpreadsheet, QrCode, MapPin, ChefHat, ExternalLink, FileText } from "lucide-react";
 import { useStudio } from "../store.js";
 import { STEP_DEFS } from "../steps.js";
-import { selectedLogoInfo } from "../../shared/brand.js";
-import { downloadSVG, downloadSVGasPNG, fileBase, locationUrl } from "../../shared/files.js";
+import { selectedLogoInfo, interpretStyleWords } from "../../shared/brand.js";
+import { downloadSVG, downloadSVGasPNG, fileBase, locationUrl, downloadBriefPNG } from "../../shared/files.js";
 import { Eyebrow } from "./WizardFooter.jsx";
 import { Svg } from "./ui.jsx";
 import { BoardStage, DownloadItem, downloadLocQrPNG } from "./TabMenu.jsx";
@@ -20,6 +20,12 @@ export default function TabDownload() {
   const hasMenu = (g.menucard || g.onlinemenu || g.onlineorder) && s.menu.categories.length > 0;
   const online = g.onlinemenu || g.onlineorder;
   const hasLocQr = !!(s.menu.shop.locQr && locationUrl(s.menu.shop, s.brand.name));
+  const hasRef = g.logo && s.hasLogo === "reference" && (s.reference.image || s.reference.notes.trim());
+  const brief = () => downloadBriefPNG({
+    brand: s.brand, reference: s.reference, logoSvg: svg,
+    chips: interpretStyleWords(s.reference.notes + " " + s.styleText).chips,
+    filename: `${base}_design_brief.png`
+  });
 
   const group = (title, sub, children) => (
     <section className="dlp-group">
@@ -73,6 +79,10 @@ export default function TabDownload() {
           {g.logo && group("Logo", "For signs, print and social media", <>
             <DownloadItem Icon={Image} title="Logo (PNG)" sub="2048 × 2048, for print & social" onClick={() => downloadSVGasPNG(svg, `${base}_${logo.type}.png`)} />
             <DownloadItem Icon={PenTool} title="Logo (SVG)" sub="Sharp at any size, for sign makers" onClick={() => downloadSVG(svg, `${base}_${logo.type}.svg`)} />
+          </>)}
+
+          {hasRef && group("Design brief", "Your reference, notes and colours in one page", <>
+            <DownloadItem id="dlBrief" Icon={FileText} title="Design brief (PNG)" sub="Share it with a designer or printer" onClick={brief} />
           </>)}
 
           {hasMenu && group("Menu card", "Print it, post it or show it on a TV", <>

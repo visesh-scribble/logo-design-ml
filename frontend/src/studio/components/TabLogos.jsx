@@ -2,18 +2,26 @@ import { useEffect, useRef } from "react";
 import { RefreshCw } from "lucide-react";
 import { useStudio } from "../store.js";
 import { STEP_DEFS } from "../steps.js";
-import { ICONS, BASE_LOGOS } from "../../shared/logos.js";
-import {
-  CUISINES, CUISINE_PHOTOS, unsplash, PALETTES, ICON_OPTIONS,
-  VARIANTS_PER_STYLE, VARIANT_NAMES, variantSVG, stripNum
-} from "../../shared/brand.js";
+import { BASE_LOGOS } from "../../shared/logos.js";
+import { VARIANTS_PER_STYLE, VARIANT_NAMES, variantSVG, stripNum, selectedLogoInfo } from "../../shared/brand.js";
 import { downloadSVG, downloadSVGasPNG, fileBase } from "../../shared/files.js";
 import WizardFooter, { Eyebrow } from "./WizardFooter.jsx";
-import { Coverflow } from "./ui.jsx";
+import { Coverflow, Svg } from "./ui.jsx";
 import Showcase from "./Showcase.jsx";
-import GoalPicker from "./GoalPicker.jsx";
 
 const INPUT = "w-full bg-[#fbfaf7] border border-[#d6d3cb] focus:border-[#c2410c] focus:bg-white focus:ring-1 focus:ring-[#c2410c] text-[#1c1917] rounded-xl px-3.5 py-2 text-sm transition";
+
+// Tagline step (after the logo): the chosen logo, live, so the tagline shows up on it as they type
+function LogoPreview() {
+  const s = useStudio();
+  const logo = selectedLogoInfo(s.selectedLogo, s.myLogo);
+  return (
+    <figure className="q-preview" aria-label="Your logo with the tagline">
+      <Svg className="q-preview-logo" markup={logo.generate(s.brand)} />
+      <figcaption>Your logo · updates as you type</figcaption>
+    </figure>
+  );
+}
 
 function BrandQuestion({ q }) {
   const inputs = useStudio(s => s.inputs);
@@ -29,74 +37,6 @@ function BrandQuestion({ q }) {
       <label className="block text-xs font-bold text-[#44403c] mb-1.5" htmlFor={id}>{label}</label>
       <input type="text" id={id} value={inputs[field]} placeholder={placeholder} className={INPUT + extra}
         onChange={e => setInput(field, e.target.value)} />
-    </div>
-  );
-}
-
-function CuisineQuestion() {
-  const s = useStudio();
-  const customRef = useRef(null);
-  useEffect(() => { if (s.cuisineSelect === "other" && s.cuisinePicked) customRef.current?.focus(); }, [s.cuisineSelect, s.cuisinePicked]);
-  return (
-    <div id="wiz-q-4" className="wiz-q">
-      <div id="cuisineGrid" className="cuisine-grid" role="radiogroup">
-        {CUISINES.map(([v, label, icon]) => {
-          const on = s.cuisinePicked && v === s.cuisineSelect;
-          return (
-            <button key={v} type="button" className={"cuisine-tile" + (on ? " sel" : "")} role="radio" aria-checked={on ? "true" : "false"}
-              data-cuisine={v} onClick={() => s.pickCuisine(v)}>
-              <span className="cuisine-photo" style={{ backgroundImage: `url(${unsplash(CUISINE_PHOTOS[v], 400)})` }}>
-                <span className="cuisine-ico"><svg viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML={{ __html: ICONS[icon] }} /></span>
-              </span>
-              <span className="cuisine-label">{label}</span>
-            </button>
-          );
-        })}
-        {s.cuisinePicked && s.cuisineSelect === "other" && (
-          <div id="customCuisineWrap" style={{ gridColumn: "1/-1" }}>
-            <label htmlFor="inputCustomCuisine" className="block text-xs font-bold text-[#44403c] mb-1.5">Your food style</label>
-            <input ref={customRef} type="text" id="inputCustomCuisine" maxLength={60} placeholder="e.g. South Indian tiffin, Korean BBQ, Kerala seafood"
-              className={INPUT} value={s.customCuisineInput} onChange={e => s.setCustomCuisine(e.target.value)} />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ColourQuestion() {
-  const brand = useStudio(s => s.brand);
-  const setPalette = useStudio(s => s.setPalette);
-  const setCustomColor = useStudio(s => s.setCustomColor);
-  return (
-    <div id="wiz-q-5" className="wiz-q">
-      <span className="block text-xs font-bold text-[#44403c] mb-1.5">Color Palette</span>
-      <div className="flex items-center space-x-2">
-        {PALETTES.map(([p, b, a, title]) => (
-          <button key={p} onClick={() => setPalette(p, b, a)} title={title}
-            className={"w-7 h-7 rounded-full border-2 border-[#d6d3cb] hover:border-[#1c1917] flex items-center justify-center overflow-hidden transition" + (p.toLowerCase() === String(brand.primaryColor).toLowerCase() ? " sel" : "")}
-            style={{ background: `linear-gradient(90deg,${b} 50%,${p} 50%)` }} />
-        ))}
-        <div className="flex items-center space-x-1.5 ml-2">
-          <input type="color" id="inputCustomColor" value={brand.primaryColor} onChange={e => setCustomColor(e.target.value)}
-            className="w-6 h-6 rounded cursor-pointer bg-transparent border-0" title="Custom Hex Color" />
-          <span className="text-[11px] text-[#78716c]">Custom</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SymbolQuestion() {
-  const icon = useStudio(s => s.brand.icon);
-  const setIcon = useStudio(s => s.setIcon);
-  return (
-    <div id="wiz-q-6" className="wiz-q">
-      <span className="block text-xs font-bold text-[#44403c] mb-1.5">Culinary Symbol</span>
-      <select id="selectIcon" value={icon} onChange={e => setIcon(e.target.value)}
-        className="w-full bg-[#fbfaf7] border border-[#d6d3cb] text-[#1c1917] rounded-xl px-3 py-1.5 text-xs">
-        {ICON_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-      </select>
     </div>
   );
 }
@@ -151,6 +91,8 @@ export default function TabLogos() {
   const newVariations = useStudio(s => s.newVariations);
   const def = STEP_DEFS[step];
   const isQ = def.panel === "q";
+  const goals = useStudio(s => s.goals);
+  const showPreview = isQ && def.q === 2 && goals.logo;
   const qRef = useRef(null);
 
   // Focus the question's input when the step changes
@@ -171,7 +113,6 @@ export default function TabLogos() {
   return (
     <div id="tab-logos" className={"animate-fade-in space-y-6" + (isQ ? " wiz-single" : "")}>
       <div className="studio-card q-shell" ref={qRef} onKeyDown={onKeyDown}>
-        {isQ && def.q === 1 && <GoalPicker />}
         <div className="q-head">
           <div>
             <Eyebrow />
@@ -186,17 +127,15 @@ export default function TabLogos() {
           </div>
         </div>
 
-        <div className={"wiz-qwrap" + (isQ ? "" : " hidden")}>
-          {isQ && def.q <= 3 && <BrandQuestion q={def.q} />}
+        <div className={"wiz-qwrap" + (isQ ? "" : " hidden") + (showPreview ? " q-split" : "")}>
+          {showPreview && <LogoPreview />}
+          <div>
+            {isQ && <BrandQuestion q={def.q} />}
+            <p id="wizHint" className="wiz-hint" style={{ display: isQ ? "" : "none" }}>Press <kbd>Enter</kbd> to continue</p>
+          </div>
         </div>
-        <div className={"wiz-qwrap" + (isQ ? "" : " hidden")}>
-          {def.q === 4 && <CuisineQuestion />}
-          {def.q === 5 && <ColourQuestion />}
-          {def.q === 6 && <SymbolQuestion />}
-        </div>
-        <p id="wizHint" className="wiz-hint" style={{ display: isQ && def.q <= 3 ? "" : "none" }}>Press <kbd>Enter</kbd> to continue</p>
         {isQ && <WizardFooter inline />}
-        {isQ && def.q <= 3 && <Showcase />}
+        {isQ && def.q === 1 && <Showcase />}
       </div>
 
       {def.panel === "logos" && <LogoVariations />}

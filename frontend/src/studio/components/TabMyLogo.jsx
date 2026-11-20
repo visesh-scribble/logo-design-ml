@@ -1,26 +1,100 @@
 import { useState } from "react";
-import { Upload, Sparkles } from "lucide-react";
+import { Upload, Sparkles, Image as ImageIcon } from "lucide-react";
 import { useStudio } from "../store.js";
 import { STEP_DEFS } from "../steps.js";
-import { MY_LOGO_DEFAULTS, buildCustomLogoSVG, whiteToTransparent } from "../../shared/brand.js";
+import { MY_LOGO_DEFAULTS, buildCustomLogoSVG, whiteToTransparent, readImageFile, paletteFromImage, interpretStyleWords } from "../../shared/brand.js";
 import WizardFooter, { Eyebrow } from "./WizardFooter.jsx";
 import { Svg } from "./ui.jsx";
+
+// Live "what we understood" chips for reference notes / typed style
+export function UnderstoodChips({ text, palette }) {
+  const w = interpretStyleWords(text);
+  if (!w.chips.length && !palette) return null;
+  return (
+    <div className="understood" aria-live="polite">
+      <span className="understood-lab">We'll use:</span>
+      {palette && <span className="chip chip-swatches" title="Colours from your picture">
+        {[palette.primary, palette.bg, palette.accent].map((c, i) => <i key={i} style={{ background: c }} />)}colours from your picture</span>}
+      {w.chips.map(c => <span key={c} className="chip">{c}</span>)}
+    </div>
+  );
+}
 
 function AskLogo() {
   const hasLogo = useStudio(s => s.hasLogo);
   const choose = useStudio(s => s.chooseHasLogo);
+  const card = (id, v, Icon, title, sub) => (
+    <button id={id} onClick={() => choose(v)} className={"my-choice" + (hasLogo === v ? " selected" : "")}>
+      <span className="my-choice-icon"><Icon className="w-5 h-5" /></span>
+      <span className="my-choice-title">{title}</span>
+      <span className="my-choice-sub">{sub}</span>
+    </button>
+  );
   return (
-    <div id="my-ask" className="max-w-xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <button id="askYes" onClick={() => choose(true)} className={"my-choice" + (hasLogo === true ? " selected" : "")}>
-        <span className="my-choice-icon"><Upload className="w-5 h-5" /></span>
-        <span className="my-choice-title">Yes, I have a logo</span>
-        <span className="my-choice-sub">Upload it and adjust size, colours, shape and more.</span>
-      </button>
-      <button id="askNo" onClick={() => choose(false)} className={"my-choice" + (hasLogo === false ? " selected" : "")}>
-        <span className="my-choice-icon"><Sparkles className="w-5 h-5" /></span>
-        <span className="my-choice-title">No, create one for me</span>
-        <span className="my-choice-sub">Pick a cuisine and colours, then explore 7 design styles.</span>
-      </button>
+    <div id="my-ask" className="ask3">
+      {card("askYes", true, Upload, "Yes, I have a logo", "Upload it and adjust size, colours, shape and more.")}
+      {card("askRef", "reference", ImageIcon, "I have a logo reference", "Upload a logo you like and type the features you want.")}
+      {card("askNo", false, Sparkles, "No, create one for me", "Pick colours and a style, or describe it, and we create 5 logos.")}
+    </div>
+  );
+}
+
+// Shared drop-zone behaviour (click or drag a file)
+function useDrop(onFile) {
+  const [over, setOver] = useState(false);
+  return [over, {
+    onDragEnter: e => { e.preventDefault(); setOver(true); },
+    onDragOver: e => { e.preventDefault(); setOver(true); },
+    onDragLeave: e => { e.preventDefault(); setOver(false); },
+    onDrop: e => { e.preventDefault(); e.stopPropagation(); setOver(false); onFile(e.dataTransfer && e.dataTransfer.files[0]); }
+  }];
+}
+
+// "I have a logo reference": a picture they like + the features they want
+function ReferenceLogo() {
+  const ref = useStudio(s => s.reference);
+  const setReference = useStudio(s => s.setReference);
+  const setPalette = useStudio(s => s.setPalette);
+  const paletteManual = useStudio(s => s.paletteManual);
+  const [msg, setMsg] = useState("");
+  const onFile = file => {
+    setMsg("");
+    readImageFile(file).then(({ dataUrl }) => {
+      setReference({ image: dataUrl });
+      return paletteFromImage(dataUrl).then(pal => {
+        setReference({ palette: pal });
+        if (pal && !paletteManual) setPalette(pal.primary, pal.bg, pal.accent, false);
+      });
+    }).catch(e => setMsg(e.message));
+  };
+  const [over, dropProps] = useDrop(onFile);
+  return (
+    <div id="my-reference" className="ref-grid">
+      <label id="refDrop" htmlFor="refFile" {...dropProps} className={"ref-drop" + (over ? " over" : "") + (ref.image ? " has" : "")}>
+        <input id="refFile" type="file" accept="image/*" className="hidden" onChange={e => { onFile(e.target.files && e.target.files[0]); e.target.value = ""; }} />
+        {ref.image ? (
+          <>
+            <img src={ref.image} alt="Your logo reference" />
+            <span className="ref-drop-note">Click to choose a different picture</span>
+          </>
+        ) : (
+          <span className="ref-drop-empty">
+            <ImageIcon className="w-7 h-7" aria-hidden="true" />
+            <b>Upload a logo you like</b>
+            <small>Click or drag a picture here. PNG, JPG, SVG or WebP, up to 10 MB.</small>
+          </span>
+        )}
+      </label>
+      <div className="ref-notes">
+        <label htmlFor="refNotes" className="ms-lab">What do you want in your logo?</label>
+        <textarea id="refNotes" rows={5} className="ms-field" value={ref.notes}
+          placeholder="e.g. Round badge, gold and black, chef hat, elegant script font"
+          onChange={e => setReference({ notes: e.target.value })} />
+        <p className="ms-hint">Mention a shape, colours, a symbol and a feeling. You can fine-tune everything on the next screen.</p>
+        <UnderstoodChips text={ref.notes} palette={ref.palette} />
+        <p className="form-err" role="alert">{msg}</p>
+      </div>
+      <div className="ref-foot"><WizardFooter inline /></div>
     </div>
   );
 }
@@ -28,40 +102,20 @@ function AskLogo() {
 function UploadLogo() {
   const myLogo = useStudio(s => s.myLogo);
   const setMyLogo = useStudio(s => s.setMyLogo);
+  const setPalette = useStudio(s => s.setPalette);
   const [msg, setMsg] = useState("");
-  const [over, setOver] = useState(false);
 
+  // Read the file, keep it as PNG, and take the brand colours from it so the menu matches the logo
   const handleLogoFile = (file) => {
     setMsg("");
     if (!file) return;
-    if (!/^image\//.test(file.type)) { setMsg("That file is not an image. Choose a PNG, JPG, SVG or WebP."); return; }
-    if (file.size > 10 * 1024 * 1024) { setMsg("That file is larger than 10 MB. Choose a smaller one."); return; }
-    const fr = new FileReader();
-    fr.onerror = () => setMsg("Could not read that file. Try another one.");
-    fr.onload = () => {
-      const img = new Image();
-      img.onerror = () => setMsg("Could not open that image. Try another file.");
-      img.onload = () => {
-        let w = img.naturalWidth || 512, h = img.naturalHeight || 512;
-        const sc = Math.min(1, 1024 / Math.max(w, h));
-        w = Math.max(1, Math.round(w * sc)); h = Math.max(1, Math.round(h * sc));
-        const c = document.createElement("canvas");
-        c.width = w; c.height = h;
-        c.getContext("2d").drawImage(img, 0, 0, w, h);
-        const png = c.toDataURL("image/png");
-        setMyLogo({ ...MY_LOGO_DEFAULTS, original: png, dataUrl: png, w, h });
-      };
-      img.src = fr.result;
-    };
-    fr.readAsDataURL(file);
+    readImageFile(file).then(({ dataUrl, w, h }) => {
+      setMyLogo({ ...MY_LOGO_DEFAULTS, original: dataUrl, dataUrl, w, h });
+      paletteFromImage(dataUrl).then(pal => { if (pal) setPalette(pal.primary, pal.bg, pal.accent, false); });
+    }).catch(e => setMsg(e.message));
   };
+  const [over, dropProps] = useDrop(handleLogoFile);
 
-  const dropProps = {
-    onDragEnter: e => { e.preventDefault(); setOver(true); },
-    onDragOver: e => { e.preventDefault(); setOver(true); },
-    onDragLeave: e => { e.preventDefault(); setOver(false); },
-    onDrop: e => { e.preventDefault(); e.stopPropagation(); setOver(false); handleLogoFile(e.dataTransfer && e.dataTransfer.files[0]); }
-  };
   const has = !!(myLogo && myLogo.dataUrl);
 
   return (
@@ -209,6 +263,7 @@ export default function TabMyLogo() {
       </div>
       {def.sub2 === "ask" && <AskLogo />}
       {def.sub2 === "upload" && <UploadLogo />}
+      {def.sub2 === "reference" && <ReferenceLogo />}
       {def.sub2 === "modify" && <ModifyLogo />}
     </div>
   );

@@ -9,12 +9,12 @@ export const GOAL_OPTIONS = [
   ["onlineorder", "Online Order", "Order from the table", ShoppingBag]
 ];
 
-export default function GoalPicker() {
+export default function GoalPicker({ big = false }) {
   const goals = useStudio(s => s.goals);
   const toggleGoal = useStudio(s => s.toggleGoal);
   return (
-    <div className="goal-pick">
-      <p className="goal-pick-q" id="goalPickLabel">What do you want to create? <span>Pick one or more</span></p>
+    <div className={"goal-pick" + (big ? " goal-pick-big" : "")}>
+      <p className={"goal-pick-q" + (big ? " sr-only" : "")} id="goalPickLabel">What do you want to create? <span>Pick one or more</span></p>
       <div className="goal-grid" role="group" aria-labelledby="goalPickLabel">
         {GOAL_OPTIONS.map(([key, label, sub, Icon]) => {
           const on = !!goals[key];

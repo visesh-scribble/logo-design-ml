@@ -22,7 +22,9 @@ const PHONE_DISHES = [
 const Dot = ({ veg }) => <i className={"sc-dot " + (veg ? "veg" : "nonveg")} aria-hidden="true" />;
 
 export default function Showcase() {
-  const goals = useStudio(s => s.goals);
+  const picked = useStudio(s => s.goals);
+  // Nothing picked yet (first screen): show everything we can make
+  const goals = Object.values(picked).some(Boolean) ? picked : { logo: true, menucard: true, onlinemenu: true, onlineorder: true };
   const name = useStudio(s => s.inputs.name);
   const tagline = useStudio(s => s.inputs.tagline);
   const brandName = (name || "").trim() || "Bella Roma";

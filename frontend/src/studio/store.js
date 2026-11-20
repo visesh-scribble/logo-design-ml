@@ -3,8 +3,8 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { REFERENCE_SAMPLES } from "../shared/logos.js";
-import { CUISINE_PRESETS, iconForCustomCuisine, MY_LOGO_DEFAULTS, DEFAULT_LOGO } from "../shared/brand.js";
-import { STEP_DEFS, wizFlow, ALL_GOALS, hasMenuGoal } from "./steps.js";
+import { CUISINE_PRESETS, iconForCustomCuisine, MY_LOGO_DEFAULTS, DEFAULT_LOGO, interpretStyleWords } from "../shared/brand.js";
+import { STEP_DEFS, wizFlow, NO_GOALS, hasMenuGoal } from "./steps.js";
 
 // Every dish gets a hidden id so the editor can remember which tags the AI added.
 // The id is stripped before the menu leaves the browser (see cleanMenu).
@@ -22,10 +22,10 @@ const SAMPLE = REFERENCE_SAMPLES.veg_starters;
 
 const initialState = {
   // wizard
-  step: "name",
+  step: "goals",
   error: "",
   // what to create (first screen); shapes which steps the wizard shows
-  goals: { ...ALL_GOALS },
+  goals: { ...NO_GOALS },
   // raw text in the three brand inputs (brand.* holds the value with defaults filled in)
   inputs: { name: "", tagline: "", estYear: "" },
   brand: {
@@ -37,7 +37,11 @@ const initialState = {
   cuisineSelect: "veg",        // value of the cuisine picker
   cuisinePicked: false,
   customCuisineInput: "",
-  hasLogo: null,               // null = not answered yet
+  hasLogo: null,               // true | "reference" | false; null = not answered yet
+  reference: { image: null, notes: "", palette: null },   // a logo they like + what they want
+  styleText: "",               // "describe your own style" on the design step
+  paletteManual: false,        // picked a colour theme by hand (wins over words / reference)
+  styleManual: false,          // clicked a logo style card by hand (wins over words)
   myLogo: null,                // uploaded + customised logo settings
   wantMenu: null,
   hasMenu: null,
@@ -112,7 +116,7 @@ function loadSample(d, key) {
 }
 
 function goTo(d, key, force) {
-  if (!force && key !== "name" && !d.inputs.name.trim()) {
+  if (!force && key !== "name" && key !== "goals" && !d.inputs.name.trim()) {
     key = "name";
     d.error = "Please enter your restaurant name first.";
   } else {
@@ -126,24 +130,42 @@ function removeCustomLogo(d) {
   if (d.selectedLogo.kind === "custom") d.selectedLogo = DEFAULT_LOGO;
 }
 
+// Leaving "Choose your look": turn the reference notes + typed style into style, symbol, font and colours.
+// Anything the person picked by hand wins. Returns false when no style could be chosen.
+function applyDesignWords(d) {
+  const text = (d.hasLogo === "reference" ? d.reference.notes + " " : "") + d.styleText;
+  const w = interpretStyleWords(text);
+  if (!d.styleManual) {
+    if (w.style != null) d.selectedStyles = [w.style];
+    else if (!d.selectedStyles.length && text.trim()) d.selectedStyles = [3];   // words but no style word: Combination
+  }
+  if (!d.selectedStyles.length) return false;
+  if (w.icon) d.brand.icon = w.icon;
+  d.brand.fontPref = w.fontPref || "";
+  if (w.colors && !d.paletteManual) {
+    if (w.colors.primary) d.brand.primaryColor = w.colors.primary;
+    if (w.colors.bg) { d.brand.bgColor = w.colors.bg; d.brand.accentColor = w.colors.accent; }
+  }
+  return true;
+}
+
 function nextStep(d) {
   const k = d.step;
   const fail = (msg) => { d.error = msg; return false; };
-  if (k === "name" && !Object.values(d.goals).some(Boolean)) return fail("Pick at least one thing to create.");
+  if (k === "goals" && !Object.values(d.goals).some(Boolean)) return fail("Pick at least one thing to create.");
   if (k === "name" && !d.inputs.name.trim()) return fail("Please enter your restaurant name first.");
-  if (k === "name") {                                  // the goals answer the old "want a menu?" question
+  if (k === "goals") {                                 // the goals answer the old "want a menu?" question
     d.wantMenu = hasMenuGoal(d.goals);
     d.menu.ordering = !!d.goals.onlineorder;
   }
   if (k === "upload" && !d.myLogo) return fail("Upload your logo to continue, or go back and choose No.");
-  if (k === "cuisine" && !d.cuisinePicked) return fail("Choose a cuisine to continue.");
-  if (k === "cuisine" && d.cuisineSelect === "other" && !d.brand.customCuisine) return fail("Type your food style to continue.");
-  if (k === "styles" && !d.selectedStyles.length) return fail("Pick at least one style to continue.");
+  if (k === "reference" && !d.reference.image && !d.reference.notes.trim()) return fail("Upload a logo you like, or type what you want in your logo.");
+  if (k === "design" && d.goals.logo && !applyDesignWords(d)) return fail("Pick a logo style, or describe the style you want.");
   if (k === "logos" && d.selectedLogo.kind !== "variant") return fail("Click a logo to choose it.");
   if (k === "menuupload" && !d.menuUploaded) return fail("Upload your menu to continue, or go back and choose No.");
   if (k === "modify" && d.myLogo) d.selectedLogo = { kind: "custom" };
   const f = wizFlow(d), i = f.indexOf(k);
-  if (i === f.length - 1) { goTo(d, "name", true); return true; }
+  if (i === f.length - 1) { goTo(d, "goals", true); return true; }
   goTo(d, f[i + 1]);
   return true;
 }
@@ -188,14 +210,20 @@ export const useStudio = create(immer((set, get) => ({
     d.brand.customCuisine = v.trim();
     if (d.brand.customCuisine) { d.error = ""; d.brand.icon = iconForCustomCuisine(d.brand.customCuisine); }
   }),
-  setPalette: (primary, bg, accent) => set(d => { d.brand.primaryColor = primary; d.brand.bgColor = bg; d.brand.accentColor = accent; }),
-  setCustomColor: (hex) => set(d => { d.brand.primaryColor = hex; }),
+  // manual = false when the app sets colours itself (from a picture), so a later hand-pick still wins
+  setPalette: (primary, bg, accent, manual = true) => set(d => {
+    d.brand.primaryColor = primary; d.brand.bgColor = bg; d.brand.accentColor = accent;
+    if (manual) d.paletteManual = true;
+  }),
+  setCustomColor: (hex) => set(d => { d.brand.primaryColor = hex; d.paletteManual = true; }),
+  setReference: (patch) => set(d => { Object.assign(d.reference, patch); d.error = ""; }),
+  setStyleText: (v) => set(d => { d.styleText = v; d.error = ""; }),
   setIcon: (icon) => set(d => { d.brand.icon = icon; }),
 
   // ---------- "do you already have a logo?" ----------
   chooseHasLogo: (v) => set(d => {
     d.hasLogo = v;
-    if (!v) removeCustomLogo(d);
+    if (v !== true) removeCustomLogo(d);
     const f = wizFlow(d);
     goTo(d, f[f.indexOf("haslogo") + 1], true);
   }),
@@ -204,12 +232,8 @@ export const useStudio = create(immer((set, get) => ({
   resetMyLogo: () => set(d => { if (d.myLogo) Object.assign(d.myLogo, MY_LOGO_DEFAULTS, { dataUrl: d.myLogo.original }); }),
 
   // ---------- logo styles + variations ----------
-  pickStyle: (i) => set(d => {
-    d.selectedStyles = [i];
-    d.error = "";
-    const f = wizFlow(d);
-    goTo(d, f[f.indexOf("styles") + 1]);
-  }),
+  // Style cards on "Choose your look" just highlight; "Create my logos" moves on
+  pickStyle: (i) => set(d => { d.selectedStyles = [i]; d.styleManual = true; d.error = ""; }),
   // Clicking a logo picks it and moves straight on, no extra "Use this logo" click
   chooseVariant: (b, v) => set(d => {
     d.selectedLogo = { kind: "variant", b, v, seed: d.variantSeed };

@@ -183,3 +183,85 @@ export function menuToCSV(categories) {
   });
   return csv;
 }
+
+// ---------- Design brief (logo reference) ----------
+const loadImg = src => new Promise(res => { if (!src) { res(null); return; } const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+
+// One PNG a designer can follow: name, tagline, the reference picture, the notes,
+// what we understood, the colours and the logo that was chosen.
+export async function downloadBriefPNG({ brand, reference, chips, logoSvg, filename }) {
+  const W = 1240, H = 1754, P = 80;                      // A4-ish portrait
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  g.fillStyle = "#fbf9f4"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#1f4d3a"; g.fillRect(0, 0, W, 14);
+  const text = (t, x, y, font, color = "#16201b") => { g.font = font; g.fillStyle = color; g.fillText(t, x, y); };
+  const wrap = (t, x, y, maxW, lh, font, color) => {
+    g.font = font; g.fillStyle = color;
+    let line = "", yy = y;
+    for (const word of String(t).split(/\s+/)) {
+      const test = line ? line + " " + word : word;
+      if (g.measureText(test).width > maxW && line) { g.fillText(line, x, yy); line = word; yy += lh; } else line = test;
+    }
+    if (line) g.fillText(line, x, yy);
+    return yy + lh;
+  };
+
+  text("LOGO DESIGN BRIEF", P, 110, "600 22px Inter, Arial, sans-serif", "#1f4d3a");
+  text(brand.name || "Restaurant", P, 175, "500 56px Newsreader, Georgia, serif");
+  if (brand.tagline) text(brand.tagline, P, 220, "400 26px Inter, Arial, sans-serif", "#6e746f");
+
+  // Reference picture (left) and chosen logo (right)
+  const boxY = 270, box = 500;
+  const [refImg, logoImg] = await Promise.all([
+    loadImg(reference.image),
+    loadImg(logoSvg ? URL.createObjectURL(new Blob([logoSvg], { type: "image/svg+xml;charset=utf-8" })) : null)
+  ]);
+  const frame = (x, label, img) => {
+    g.fillStyle = "#ffffff"; g.fillRect(x, boxY, box, box);
+    g.strokeStyle = "#e7e2d6"; g.lineWidth = 2; g.strokeRect(x, boxY, box, box);
+    if (img) {
+      const s = Math.min((box - 40) / img.width, (box - 40) / img.height);
+      const w = img.width * s, h = img.height * s;
+      g.drawImage(img, x + (box - w) / 2, boxY + (box - h) / 2, w, h);
+    } else text("(none)", x + box / 2 - 40, boxY + box / 2, "400 24px Inter, Arial, sans-serif", "#9aa39c");
+    text(label, x, boxY + box + 40, "600 22px Inter, Arial, sans-serif", "#3c4640");
+  };
+  frame(P, "Their reference", refImg);
+  frame(W - P - box, "Logo we made from it", logoImg);
+
+  // Notes
+  let y = boxY + box + 110;
+  text("What they want", P, y, "600 26px Inter, Arial, sans-serif", "#1f4d3a");
+  y = wrap(reference.notes || "(no notes)", P, y + 44, W - 2 * P, 38, "400 28px Inter, Arial, sans-serif", "#16201b");
+
+  // Understood keywords
+  if (chips && chips.length) {
+    y += 20;
+    text("We understood", P, y, "600 26px Inter, Arial, sans-serif", "#1f4d3a");
+    let x = P; y += 30;
+    g.font = "600 24px Inter, Arial, sans-serif";
+    for (const chip of chips) {
+      const w = g.measureText(chip).width + 36;
+      if (x + w > W - P) { x = P; y += 56; }
+      g.fillStyle = "#e9f0ec"; g.beginPath(); g.roundRect ? g.roundRect(x, y, w, 44, 22) : g.rect(x, y, w, 44); g.fill();
+      g.fillStyle = "#1f4d3a"; g.fillText(chip, x + 18, y + 30);
+      x += w + 12;
+    }
+    y += 90;
+  }
+
+  // Colours
+  text("Colours", P, y, "600 26px Inter, Arial, sans-serif", "#1f4d3a");
+  [["Main", brand.primaryColor], ["Background", brand.bgColor], ["Accent", brand.accentColor]].forEach(([label, col], i) => {
+    const x = P + i * 260;
+    g.fillStyle = col; g.fillRect(x, y + 24, 80, 80);
+    g.strokeStyle = "#d5cfc0"; g.strokeRect(x, y + 24, 80, 80);
+    text(label, x + 96, y + 58, "600 22px Inter, Arial, sans-serif", "#3c4640");
+    text(String(col).toUpperCase(), x + 96, y + 90, "400 22px Inter, Arial, sans-serif", "#6e746f");
+  });
+
+  text("Made with Gourmet Studio", P, H - 60, "400 20px Inter, Arial, sans-serif", "#9aa39c");
+  if (logoImg) URL.revokeObjectURL(logoImg.src);
+  await new Promise(res => c.toBlob(bl => { saveBlobAs(bl, filename); res(); }, "image/png"));
+}

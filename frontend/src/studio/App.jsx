@@ -5,7 +5,8 @@ import { selectedLogoInfo } from "../shared/brand.js";
 import { Svg } from "./components/ui.jsx";
 import WizardFooter from "./components/WizardFooter.jsx";
 import TabLogos from "./components/TabLogos.jsx";
-import TabStyles from "./components/TabStyles.jsx";
+import TabGoals from "./components/TabGoals.jsx";
+import TabDesign from "./components/TabDesign.jsx";
 import TabMyLogo from "./components/TabMyLogo.jsx";
 import TabMenuAsk from "./components/TabMenuAsk.jsx";
 import TabMenu from "./components/TabMenu.jsx";
@@ -67,7 +68,7 @@ export default function App() {
   const step = useStudio(s => s.step);
   const modal = useStudio(s => s.modal);
   const def = STEP_DEFS[step];
-  const inlineFooter = def.panel === "q" || (def.panel === "mylogo" && def.sub2 === "upload") || (def.panel === "menuask" && def.sub2 === "upload");
+  const inlineFooter = def.panel === "q" || def.panel === "goals" || (def.panel === "mylogo" && (def.sub2 === "upload" || def.sub2 === "reference")) || (def.panel === "menuask" && def.sub2 === "upload");
 
   useMenuFileDrop();                                  // drop a menu file anywhere on the page
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
@@ -77,7 +78,8 @@ export default function App() {
       <AppBar />
       <main className="app-main">
         {(def.panel === "q" || def.panel === "logos") && <TabLogos />}
-        {def.panel === "styles" && <TabStyles />}
+        {def.panel === "goals" && <TabGoals />}
+        {def.panel === "design" && <TabDesign />}
         {def.panel === "mylogo" && <TabMyLogo />}
         {def.panel === "menuask" && <TabMenuAsk />}
         {def.panel === "menu" && <TabMenu />}

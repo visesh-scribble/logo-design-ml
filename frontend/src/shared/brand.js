@@ -93,6 +93,8 @@ function variantBrand(brand, v, seed) {
   else if (v === 3) { b.bgColor = brand.primaryColor; b.primaryColor = brand.bgColor; b.accentColor = brand.bgColor; b.icon = pickIcon(6); fonts = "condensed"; }
   else if (v === 4) { b.bgColor = "#ffffff"; b.accentColor = brand.primaryColor; fonts = "elegant"; }
   if (seed && v === 0) fonts = Object.keys(VARIANT_FONTS)[seed % 4];
+  // A font mood the person asked for (from their reference notes / typed style) wins on the Signature logo
+  if (v === 0 && brand.fontPref && VARIANT_FONTS[brand.fontPref]) fonts = brand.fontPref;
   return { brand: b, fonts };
 }
 
@@ -230,4 +232,124 @@ export function selectedLogoInfo(selected, myLogo) {
     };
   }
   return BASE_LOGOS[selected.b] || BASE_LOGOS[4];
+}
+
+// ========================================================
+// LOGO REFERENCE + "DESCRIBE YOUR STYLE": understand typed words and a reference picture.
+// All local rules (no AI, no network), so it is instant and private.
+// ========================================================
+// Index into BASE_LOGOS: 0 pictorial, 1 lettermark, 2 wordmark, 3 combination, 4 emblem, 5 abstract, 6 mascot
+const STYLE_RULES = [
+  [/round|circle|circular|badge|seal|crest|emblem|stamp|shield|\bring\b/, 4, "Badge / emblem"],
+  [/monogram|initial|letter ?mark|letters? only|\bletters?\b/, 1, "Monogram"],
+  [/word ?mark|text only|name only|typograph|just (the )?name|only (the )?name/, 2, "Name in type"],
+  [/minimal|geometric|abstract|shape/, 5, "Geometric"],
+  [/mascot|character|cartoon|cute|funny|smiling/, 6, "Mascot"],
+  [/icon|symbol|picture|pictorial|illustration/, 0, "Symbol"]
+];
+const ICON_RULES = [
+  [/chef|cook|\bhat\b/, "chefhat", "Chef hat"],
+  [/fork|knife|cutlery|spoon/, "cutlery", "Fork & knife"],
+  [/cloche|dome|platter/, "cloche", "Cloche"],
+  [/pizza/, "pizza", "Pizza"],
+  [/coffee|cafe|café|tea|cup|chai/, "coffee", "Coffee cup"],
+  [/burger|sandwich/, "burger", "Burger"],
+  [/noodle|ramen|bowl|chopstick|asian|chinese|wok/, "ramen", "Bowl"],
+  [/fire|flame|grill|bbq|tandoor|spicy|\bhot\b/, "flame", "Flame"],
+  [/wheat|bread|bak|grain/, "wheat", "Wheat"],
+  [/leaf|veg|green|organic|plant|herb|fresh/, "leaf", "Leaf"]
+];
+const FONT_RULES = [
+  [/elegant|luxur|script|classy|premium|fancy|royal|fine/, "elegant", "Elegant"],
+  [/modern|clean|minimal|simple|sleek/, "modern", "Modern"],
+  [/bold|strong|street|sport|thick|heavy/, "condensed", "Bold"],
+  [/vintage|classic|retro|heritage|\bold\b|traditional/, "classic", "Classic"]
+];
+// name -> [primary, dark background, light accent]
+const NAMED_COLOURS = [
+  [/gold|golden/, "Gold", "#d4af37"], [/maroon|wine|burgundy/, "Maroon", "#7f1d1d"], [/red/, "Red", "#dc2626"],
+  [/olive/, "Olive", "#6b7d2a"], [/green/, "Green", "#16a34a"], [/navy/, "Navy", "#1e3a8a"], [/blue/, "Blue", "#2563eb"],
+  [/orange|saffron/, "Orange", "#ea580c"], [/brown|coffee|chocolate/, "Brown", "#7c4a1e"], [/pink/, "Pink", "#db2777"],
+  [/purple|violet/, "Purple", "#7c3aed"], [/teal/, "Teal", "#0d9488"], [/yellow/, "Yellow", "#eab308"]
+];
+
+// What we understood from free text. Every field is optional.
+export function interpretStyleWords(text) {
+  const t = String(text || "").toLowerCase();
+  const out = { chips: [] };
+  if (!t.trim()) return out;
+  for (const [re, idx, label] of STYLE_RULES) if (re.test(t)) { out.style = idx; out.chips.push(label); break; }
+  for (const [re, icon, label] of ICON_RULES) if (re.test(t)) { out.icon = icon; out.chips.push(label); break; }
+  for (const [re, font, label] of FONT_RULES) if (re.test(t)) { out.fontPref = font; out.chips.push(label); break; }
+  const col = NAMED_COLOURS.find(([re]) => re.test(t));
+  const dark = /black|dark|night|charcoal/.test(t), light = /white|light|cream|ivory|pastel/.test(t);
+  if (col || dark || light) {
+    out.colors = {};
+    if (col) { out.colors.primary = col[2]; out.chips.push(col[1]); }
+    if (dark) { out.colors.bg = "#111111"; out.colors.accent = "#ffffff"; out.chips.push("Dark background"); }
+    else if (light) { out.colors.bg = "#fbf8f1"; out.colors.accent = "#1c1917"; out.chips.push("Light background"); }
+  }
+  return out;
+}
+
+// Main colours of a picture: { primary, bg, accent } as hex. Resolves null if nothing usable.
+export function paletteFromImage(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onerror = () => resolve(null);
+    img.onload = () => {
+      const S = 64, c = document.createElement("canvas");
+      c.width = S; c.height = S;
+      const g = c.getContext("2d", { willReadFrequently: true });
+      g.drawImage(img, 0, 0, S, S);
+      let px;
+      try { px = g.getImageData(0, 0, S, S).data; } catch (e) { resolve(null); return; }
+      const buckets = new Map();
+      for (let i = 0; i < px.length; i += 4) {
+        const [r, gr, b, a] = [px[i], px[i + 1], px[i + 2], px[i + 3]];
+        if (a < 128 || (r > 240 && gr > 240 && b > 240)) continue;      // skip transparent + paper white
+        const key = (r >> 4) << 8 | (gr >> 4) << 4 | (b >> 4);
+        const e = buckets.get(key) || { n: 0, r: 0, g: 0, b: 0 };
+        e.n++; e.r += r; e.g += gr; e.b += b;
+        buckets.set(key, e);
+      }
+      const cols = [...buckets.values()].sort((a, b) => b.n - a.n).slice(0, 8)
+        .map(e => { const r = e.r / e.n, gg = e.g / e.n, b = e.b / e.n, mx = Math.max(r, gg, b), mn = Math.min(r, gg, b);
+          return { n: e.n, r, g: gg, b, lum: 0.2126 * r + 0.7152 * gg + 0.0722 * b, sat: mx ? (mx - mn) / mx : 0 }; });
+      if (!cols.length) { resolve(null); return; }
+      const hex = c2 => "#" + [c2.r, c2.g, c2.b].map(v => Math.round(v).toString(16).padStart(2, "0")).join("");
+      const common = cols.filter(c2 => c2.n >= cols[0].n * 0.08);
+      const bg = [...common].sort((a, b) => a.lum - b.lum)[0];
+      const primary = [...common].filter(c2 => c2 !== bg).sort((a, b) => (b.sat * Math.sqrt(b.n)) - (a.sat * Math.sqrt(a.n)))[0] || bg;
+      const lightest = [...common].sort((a, b) => b.lum - a.lum)[0];
+      resolve({ primary: hex(primary), bg: hex(bg), accent: lightest && lightest.lum > 170 && lightest !== bg ? hex(lightest) : "#ffffff" });
+    };
+    img.src = dataUrl;
+  });
+}
+
+// Read an image file into a PNG data URL (max 1024 px), with friendly errors
+export function readImageFile(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) { reject(new Error("No file chosen.")); return; }
+    if (!/^image\//.test(file.type)) { reject(new Error("That file is not an image. Choose a PNG, JPG, SVG or WebP.")); return; }
+    if (file.size > 10 * 1024 * 1024) { reject(new Error("That file is larger than 10 MB. Choose a smaller one.")); return; }
+    const fr = new FileReader();
+    fr.onerror = () => reject(new Error("Could not read that file. Try another one."));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Could not open that image. Try another file."));
+      img.onload = () => {
+        let w = img.naturalWidth || 512, h = img.naturalHeight || 512;
+        const sc = Math.min(1, 1024 / Math.max(w, h));
+        w = Math.max(1, Math.round(w * sc)); h = Math.max(1, Math.round(h * sc));
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve({ dataUrl: c.toDataURL("image/png"), w, h });
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
 }
