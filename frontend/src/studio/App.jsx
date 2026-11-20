@@ -9,7 +9,7 @@ import TabStyles from "./components/TabStyles.jsx";
 import TabMyLogo from "./components/TabMyLogo.jsx";
 import TabMenuAsk from "./components/TabMenuAsk.jsx";
 import TabMenu from "./components/TabMenu.jsx";
-import TabMockups from "./components/TabMockups.jsx";
+import TabDownload from "./components/TabDownload.jsx";
 import { RawTextModal, ItemEditorModal, QrMenuModal } from "./components/Modals.jsx";
 import { useMenuFileDrop } from "./components/menuFiles.js";
 
@@ -81,7 +81,7 @@ export default function App() {
         {def.panel === "mylogo" && <TabMyLogo />}
         {def.panel === "menuask" && <TabMenuAsk />}
         {def.panel === "menu" && <TabMenu />}
-        {def.panel === "mockups" && <TabMockups />}
+        {def.panel === "download" && <TabDownload />}
       </main>
       {/* On short question screens the Back / Next buttons sit right under the input (rendered by the tab);
           on the big work screens they stay in the sticky bottom bar. */}

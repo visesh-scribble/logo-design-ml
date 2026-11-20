@@ -104,6 +104,7 @@ export default function PhoneMenu() {
   const brand = data?.brand || {};
   const menu = data?.menu || {};
   const cats = menu.categories || [];
+  const ordering = menu.ordering !== false;     // older menus have no flag: keep ordering on
   const itemAt = key => { const [c, i] = key.split("-").map(Number); return cats[c].items[i]; };
   const money = n => {
     const cur = menu.currency;
@@ -191,7 +192,7 @@ export default function PhoneMenu() {
                       <span className="price">{priceText(it)}</span>
                     </div>
                     {(it.description || it.tagline) && <div className="desc">{it.description || it.tagline}</div>}
-                    <div className="actions"><QtyControl q={cart[`${ci}-${ii}`] || 0} onChange={d => change(`${ci}-${ii}`, d)} /></div>
+                    {ordering && <div className="actions"><QtyControl q={cart[`${ci}-${ii}`] || 0} onChange={d => change(`${ci}-${ii}`, d)} /></div>}
                   </div>
                 </div>
               ))}
@@ -209,11 +210,11 @@ export default function PhoneMenu() {
         </aside>
       )}
 
-      <button id="cartBar" className={count > 0 ? "show" : ""} onClick={openCart}>
+      {ordering && <button id="cartBar" className={count > 0 ? "show" : ""} onClick={openCart}>
         <span id="cartCount">{count} item{count > 1 ? "s" : ""} · {data ? money(total) : ""}</span><span>View Cart ›</span>
-      </button>
+      </button>}
 
-      <div id="sheetBg" className={"sheet-bg" + (sheetOpen ? " show" : "")} onClick={e => { if (e.target === e.currentTarget) closeCart(); }}>
+      {ordering && <div id="sheetBg" className={"sheet-bg" + (sheetOpen ? " show" : "")} onClick={e => { if (e.target === e.currentTarget) closeCart(); }}>
         <div className="sheet" id="sheet">
           {placed ? (
             <>
@@ -275,7 +276,7 @@ export default function PhoneMenu() {
             </>
           )}
         </div>
-      </div>
+      </div>}
     </>
   );
 }

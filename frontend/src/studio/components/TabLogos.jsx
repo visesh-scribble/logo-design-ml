@@ -10,6 +10,8 @@ import {
 import { downloadSVG, downloadSVGasPNG, fileBase } from "../../shared/files.js";
 import WizardFooter, { Eyebrow } from "./WizardFooter.jsx";
 import { Coverflow } from "./ui.jsx";
+import Showcase from "./Showcase.jsx";
+import GoalPicker from "./GoalPicker.jsx";
 
 const INPUT = "w-full bg-[#fbfaf7] border border-[#d6d3cb] focus:border-[#c2410c] focus:bg-white focus:ring-1 focus:ring-[#c2410c] text-[#1c1917] rounded-xl px-3.5 py-2 text-sm transition";
 
@@ -169,6 +171,7 @@ export default function TabLogos() {
   return (
     <div id="tab-logos" className={"animate-fade-in space-y-6" + (isQ ? " wiz-single" : "")}>
       <div className="studio-card q-shell" ref={qRef} onKeyDown={onKeyDown}>
+        {isQ && def.q === 1 && <GoalPicker />}
         <div className="q-head">
           <div>
             <Eyebrow />
@@ -193,6 +196,7 @@ export default function TabLogos() {
         </div>
         <p id="wizHint" className="wiz-hint" style={{ display: isQ && def.q <= 3 ? "" : "none" }}>Press <kbd>Enter</kbd> to continue</p>
         {isQ && <WizardFooter inline />}
+        {isQ && def.q <= 3 && <Showcase />}
       </div>
 
       {def.panel === "logos" && <LogoVariations />}

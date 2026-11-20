@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   LayoutGrid, List, Palette, SlidersHorizontal, Pencil, Upload, Clipboard, MapPin, LocateFixed,
-  ExternalLink, Download, Image, Printer, QrCode, FileSpreadsheet, Tv
+  ExternalLink, Download, Maximize2
 } from "lucide-react";
 import { useStudio } from "../store.js";
 import { STEP_DEFS } from "../steps.js";
@@ -9,7 +10,8 @@ import { locationUrl, downloadQrCard, fileBase, qrDataUrl } from "../../shared/f
 import { Eyebrow } from "./WizardFooter.jsx";
 import MenuBoard, { useQr } from "./MenuBoard.jsx";
 import { handleMenuFile } from "./menuFiles.js";
-import { exportMenuPNG, exportMenuCSV, printMenu, toggleFullScreenBoard } from "./menuExport.js";
+import { toggleFullScreenBoard } from "./menuExport.js";
+import { useMediaQuery, useFitZoom, BOARD_WIDTH } from "./ui.jsx";
 
 const MENU_TEMPLATES = [
   ["infographic", "Dish cards", "Photos and recipes", "#fff7ed", "#c2410c"],
@@ -98,16 +100,31 @@ function LocationQr() {
   );
 }
 
-function SettingsPanel() {
+const TOOL_TABS = [
+  ["layout", LayoutGrid, "Layout", "Columns, prices and your shop details"],
+  ["dishes", List, "Dishes", "Edit, upload or paste your dishes"],
+  ["style", Palette, "Style", "Pick a design for your menu"],
+  ["details", SlidersHorizontal, "Details", "Choose what shows on the board"]
+];
+
+// sheet = shown as a bottom sheet (tablet/phone) instead of a side panel (laptop)
+function SettingsPanel({ sheet, open, onClose }) {
   const s = useStudio();
   const m = s.menu;
   const cats = m.categories;
   const totalItems = cats.reduce((n, c) => n + c.items.length, 0);
-  const tab = (key, Icon, label) => (
-    <button type="button" className="ms-tab" role="tab" aria-selected={s.msTab === key ? "true" : "false"} aria-controls={"ms-p-" + key}
-      data-p={key} onClick={() => s.setMsTab(key)}><Icon />{label}</button>
-  );
+  const panelRef = useRef(null);
+  const [, , label, desc] = TOOL_TABS.find(t => t[0] === s.msTab) || TOOL_TABS[0];
   const pane = (key) => "ms-pane" + (s.msTab === key ? " on" : "");
+
+  // Sheet: focus moves in when it opens, Esc closes it (but not while a pop-up is open on top)
+  useEffect(() => {
+    if (!sheet || !open) return;
+    panelRef.current?.focus({ preventScroll: true });
+    const onKey = e => { if (e.key === "Escape" && !useStudio.getState().modal) onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [sheet, open, onClose]);
   const toggle = (id, key, title, sub) => (
     <label className="ms-switch-row"><span><b>{title}</b><small>{sub}</small></span>
       <span className="ms-toggle"><input type="checkbox" id={id} checked={m[key]} onChange={e => s.setMenu({ [key]: e.target.checked })} /><i /></span></label>
@@ -116,13 +133,15 @@ function SettingsPanel() {
     <Tag id={id} className="ms-field" placeholder={placeholder} aria-label={label} value={m.shop[key]} onChange={e => s.setShop({ [key]: e.target.value })} {...extra} />
   );
 
-  return (
-    <aside className="ms-panel no-print">
-      <div className="ms-tabs" role="tablist" aria-label="Menu settings">
-        {tab("layout", LayoutGrid, "Layout")}
-        {tab("dishes", List, "Dishes")}
-        {tab("style", Palette, "Style")}
-        {tab("details", SlidersHorizontal, "Details")}
+  const body = (
+    <>
+    {sheet && open && <div className="ms-sheet-bg no-print" onClick={onClose} aria-hidden="true" />}
+    <aside id="msPanel" ref={panelRef} tabIndex={-1} className={"ms-panel no-print" + (sheet ? " is-sheet" : "") + (open ? " open" : "")}
+      role={sheet ? "dialog" : "tabpanel"} aria-modal={sheet ? "true" : undefined} aria-label={label + " settings"}>
+      {sheet && <span className="ms-grab" aria-hidden="true" />}
+      <div className="ms-panel-head">
+        <div><b>{label}</b><small>{desc}</small></div>
+        {sheet && <button type="button" className="ms-done" onClick={onClose}>Done</button>}
       </div>
 
       {/* DISHES */}
@@ -223,7 +242,10 @@ function SettingsPanel() {
         </div>
       </div>
     </aside>
+    </>
   );
+  // On tablets/phones the sheet lives in <body>, so no animated page wrapper can move it
+  return sheet ? createPortal(body, document.body) : body;
 }
 
 export function DownloadItem({ id, Icon, title, sub, onClick, hidden }) {
@@ -234,58 +256,96 @@ export function DownloadItem({ id, Icon, title, sub, onClick, hidden }) {
   );
 }
 
-// MENU BOARD STUDIO
+// The live board at its real (export) size, scaled to fit the space it is given.
+// manual = allow the −/+ zoom from the store; otherwise it always fits.
+export function BoardStage({ manual = false, stageClass = "ms-stage" }) {
+  const stageRef = useRef(null);
+  const fit = useFitZoom(stageRef);
+  const mode = useStudio(s => s.menuZoomMode);
+  const menuZoom = useStudio(s => s.menuZoom);
+  const exporting = useStudio(s => s.boardExporting);
+  const zoom = exporting ? 100 : manual && mode === "manual" ? menuZoom : fit;
+  return (
+    <div className={stageClass} ref={stageRef}>
+      <div id="menuZoom" style={{ zoom: zoom / 100 }}>
+        {/* WRAPPER TARGET FOR EXPORT AND DISPLAY */}
+        <div id="menuBoardWrapper" style={{ width: BOARD_WIDTH }}><MenuBoard /></div>
+      </div>
+    </div>
+  );
+}
+
+function ZoomTools() {
+  const mode = useStudio(s => s.menuZoomMode);
+  const menuZoom = useStudio(s => s.menuZoom);
+  const setMenuZoom = useStudio(s => s.setMenuZoom);
+  // "fit" shows the real fitted percentage, read from the board on screen
+  const [shown, setShown] = useState(100);
+  useEffect(() => {
+    const el = document.getElementById("menuZoom");
+    if (!el) return;
+    const read = () => setShown(Math.round(parseFloat(el.style.zoom || 1) * 100));
+    read();
+    const mo = new MutationObserver(read);
+    mo.observe(el, { attributes: true, attributeFilter: ["style"] });
+    return () => mo.disconnect();
+  }, []);
+  const cur = mode === "manual" ? menuZoom : shown;
+  return (
+    <div className="ms-zoom" role="group" aria-label="Zoom">
+      <button type="button" onClick={() => setMenuZoom(-10, cur)} aria-label="Zoom out">&minus;</button>
+      <span id="menuZoomVal" aria-live="polite">{cur}%</span>
+      <button type="button" onClick={() => setMenuZoom(10, cur)} aria-label="Zoom in">+</button>
+      <button type="button" className={"ms-fit" + (mode === "fit" ? " on" : "")} onClick={() => setMenuZoom(0)} aria-pressed={mode === "fit" ? "true" : "false"}>Fit</button>
+    </div>
+  );
+}
+
+// MENU BOARD STUDIO: tools rail + panel + big live canvas (laptop); canvas + bottom dock + sheet (tablet/phone)
 export default function TabMenu() {
   const def = STEP_DEFS.menu;
-  const zoom = useStudio(s => s.menuZoom);
-  const setMenuZoom = useStudio(s => s.setMenuZoom);
-  const openModal = useStudio(s => s.openModal);
-  const showLocQr = useStudio(s => s.menu.shop.locQr && !!locationUrl(s.menu.shop, s.brand.name));
+  const isDesk = useMediaQuery("(min-width: 1024px)");
+  const msTab = useStudio(s => s.msTab);
+  const setMsTab = useStudio(s => s.setMsTab);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const closeSheet = useCallback(() => setSheetOpen(false), []);
+
+  useEffect(() => { if (isDesk) setSheetOpen(false); }, [isDesk]);
+
+  const pick = key => {
+    if (isDesk) { setMsTab(key); return; }
+    if (sheetOpen && key === msTab) { setSheetOpen(false); return; }
+    setMsTab(key);
+    setSheetOpen(true);
+  };
+  const tabs = cls => TOOL_TABS.map(([key, Icon, label]) => (
+    <button key={key} type="button" className={cls} role="tab" aria-selected={msTab === key && (isDesk || sheetOpen) ? "true" : "false"}
+      aria-controls="msPanel" data-p={key} onClick={() => pick(key)}><Icon aria-hidden="true" /><span>{label}</span></button>
+  ));
 
   return (
     <div id="tab-menu" className="animate-fade-in">
       <div className="ms-head no-print">
-        <div>
+        <div className="ms-head-txt">
           <Eyebrow />
           <h1 id="menuTitle" className="display page-title">{def.title}</h1>
           <p id="menuSub" className="q-sub">{def.sub}</p>
         </div>
+        <div className="ms-head-tools">
+          <ZoomTools />
+          <button type="button" className="ms-btn" onClick={toggleFullScreenBoard}><Maximize2 />Full screen</button>
+        </div>
       </div>
 
       <div className="ms-work">
-        <SettingsPanel />
-        <section className="ms-canvas">
-          <div className="ms-ctool no-print">
-            <div className="ms-live"><i />Live preview &middot; click any text on the board to edit it</div>
-            <div className="ms-zoom">
-              <button type="button" onClick={() => setMenuZoom(-10)} aria-label="Zoom out">&minus;</button>
-              <span id="menuZoomVal">{zoom}%</span>
-              <button type="button" onClick={() => setMenuZoom(10)} aria-label="Zoom in">+</button>
-              <button type="button" className="ms-fit" onClick={() => setMenuZoom(0)}>Fit</button>
-            </div>
-          </div>
-          <div className="ms-stage">
-            <div id="menuZoom" style={{ zoom: zoom / 100 }}>
-              {/* WRAPPER TARGET FOR EXPORT AND DISPLAY */}
-              <div id="menuBoardWrapper" className="w-full transition-all duration-300 max-w-4xl"><MenuBoard /></div>
-            </div>
-          </div>
+        {isDesk && <nav className="ms-rail no-print" role="tablist" aria-label="Menu tools">{tabs("ms-rail-btn")}</nav>}
+        <SettingsPanel sheet={!isDesk} open={isDesk || sheetOpen} onClose={closeSheet} />
+        <section className="ms-canvas" aria-label="Live preview of your menu board">
+          <BoardStage manual />
         </section>
       </div>
 
-      {/* DOWNLOAD & SHARE: bottom of the menu page */}
-      <section id="msDlSection" className="dl-section no-print">
-        <h2 className="display">Download &amp; share your menu</h2>
-        <p>Happy with the board? Save it, print it, or put it on your customers' phones.</p>
-        <div className="dl-grid">
-          <DownloadItem Icon={Image} title="Image (PNG)" sub="For WhatsApp, Instagram or a screen" onClick={exportMenuPNG} />
-          <DownloadItem Icon={Printer} title="Print or PDF" sub="For a printed menu card" onClick={printMenu} />
-          <DownloadItem Icon={QrCode} title="QR menu for phones" sub="Customers scan, see photos and order" onClick={() => openModal("qr")} />
-          <DownloadItem Icon={FileSpreadsheet} title="Dish list (CSV)" sub="Open in Excel or your billing system" onClick={exportMenuCSV} />
-          <DownloadItem Icon={Tv} title="TV display" sub="Full screen for a TV behind the counter" onClick={() => { setMenuZoom(0); toggleFullScreenBoard(); }} />
-          <DownloadItem id="msDlLocQr" Icon={MapPin} title="Location QR" sub="Scan to find your shop" onClick={downloadLocQrPNG} hidden={!showLocQr} />
-        </div>
-      </section>
+      {!isDesk && createPortal(<nav className="ms-dock no-print" role="tablist" aria-label="Menu tools">{tabs("ms-dock-btn")}</nav>, document.body)}
     </div>
   );
 }

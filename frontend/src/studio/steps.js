@@ -1,6 +1,6 @@
 // ONE-QUESTION-PER-SCREEN WIZARD (unchanged from the original)
-// Flow (no logo):  name > hasLogo > tagline > badge > cuisine > styles > colours > logos > menu > mockups
-// Flow (has logo): name > hasLogo > tagline > upload > modify > badge > colours > menu > mockups
+// Flow (no logo):  name > hasLogo > tagline > badge > cuisine > styles > colours > logos > menu > download
+// Flow (has logo): name > hasLogo > tagline > upload > modify > badge > colours > menu > download
 export const STEP_DEFS = {
   name:     { panel: "q", q: 1, title: "What is your restaurant called?", sub: "This name goes on every logo and menu.", phase: "Brand" },
   haslogo:  { panel: "mylogo", sub2: "ask", title: "Do you already have a logo?", sub: "If you do, upload it and we will use it on your menu and mockups.", phase: "Logo" },
@@ -18,21 +18,30 @@ export const STEP_DEFS = {
   menuupload: { panel: "menuask", sub2: "upload", title: "Upload your menu", sub: "Choose your menu file, or paste the menu as text.", phase: "Menu" },
   menusample: { panel: "menuask", sub2: "sample", title: "Pick a starting menu", sub: "Choose one to start from. You can edit every dish and price on the next screen.", phase: "Menu" },
   menu:     { panel: "menu", title: "Design your menu board", sub: "Pick a theme, layout and colours. Click any dish or price to edit it.", phase: "Menu" },
-  mockups:  { panel: "mockups", title: "See it in the real world", sub: "Your logo on a signboard, menu cover, packaging and business card.", phase: "Mockups" }
+  download: { panel: "download", title: "Your files are ready", sub: "Download, print or share everything you made.", phase: "Download" }
 };
 
+// What the visitor wants to create (picked on the first screen). The flow only includes the steps they need.
+export const ALL_GOALS = { logo: true, menucard: true, onlinemenu: true, onlineorder: true };
+export const hasMenuGoal = (g) => !!(g && (g.menucard || g.onlinemenu || g.onlineorder));
+
 export function wizFlow(s) {
-  const f = ["name", "haslogo", "tagline"];
-  if (s.hasLogo === true) f.push("upload", "modify", "badge", "colors");
-  else f.push("badge", "cuisine", "styles", "colors", "logos");
-  f.push("wantmenu");
-  if (s.wantMenu === true) {
+  const g = s.goals || ALL_GOALS;
+  const f = ["name"];
+  if (g.logo) {
+    f.push("haslogo", "tagline");
+    if (s.hasLogo === true) f.push("upload", "modify", "badge", "colors");
+    else f.push("badge", "cuisine", "styles", "colors", "logos");
+  } else {
+    f.push("tagline", "cuisine");          // cuisine still sets the colours + symbol used on the menu
+  }
+  if (hasMenuGoal(g)) {                    // the "do you want a menu board?" answer is already known
     f.push("hasmenu");
     if (s.hasMenu === true) f.push("menuupload");
     else if (s.hasMenu === false) f.push("menusample");
     f.push("menu");
   }
-  f.push("mockups");
+  f.push("download");                      // every run ends on its own downloads page
   return f;
 }
 
@@ -40,9 +49,11 @@ export function wizFlow(s) {
 export const CHOICE_STEPS = ["haslogo", "wantmenu", "hasmenu", "menusample", "logos"];
 
 export function nextLabel(key, s) {
-  return key === "mockups" ? "Start over"
+  const flow = wizFlow(s);
+  const next = flow[flow.indexOf(key) + 1];
+  return !next ? "Start over"
+    : next === "download" ? "Next: download your files →"
     : key === "colors" && s.hasLogo !== true ? "Create my logos →"
     : key === "modify" ? "Use this logo →"
-    : key === "menu" ? "Next: see it in the real world →"
     : "Next →";
 }

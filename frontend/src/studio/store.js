@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { REFERENCE_SAMPLES } from "../shared/logos.js";
 import { CUISINE_PRESETS, iconForCustomCuisine, MY_LOGO_DEFAULTS, DEFAULT_LOGO } from "../shared/brand.js";
-import { STEP_DEFS, wizFlow } from "./steps.js";
+import { STEP_DEFS, wizFlow, ALL_GOALS, hasMenuGoal } from "./steps.js";
 
 // Every dish gets a hidden id so the editor can remember which tags the AI added.
 // The id is stripped before the menu leaves the browser (see cleanMenu).
@@ -24,6 +24,8 @@ const initialState = {
   // wizard
   step: "name",
   error: "",
+  // what to create (first screen); shapes which steps the wizard shows
+  goals: { ...ALL_GOALS },
   // raw text in the three brand inputs (brand.* holds the value with defaults filled in)
   inputs: { name: "", tagline: "", estYear: "" },
   brand: {
@@ -55,6 +57,7 @@ const initialState = {
     showDesc: true,
     showDietary: true,
     showFooter: true,
+    ordering: true,              // phone menu lets customers order (false = view-only online menu)
     headerSubtext: "Crispy, Cheesy & Absolutely Delicious! • Perfect for Parties & Cravings",
     categories: withUids(JSON.parse(JSON.stringify(SAMPLE.categories))),
     shop: { address: "", phone: "", hours: "", extra: "", locQr: false, mapLink: "", coords: "" }
@@ -63,6 +66,8 @@ const initialState = {
   // menu studio UI
   msTab: "layout",
   menuZoom: 100,
+  menuZoomMode: "fit",           // "fit" = scale the board to the screen; "manual" = use menuZoom
+  boardExporting: false,         // true while the PNG is being taken: board shown at 100%
   modal: null                  // "rawText" | "editor" | "qr" | null
 };
 
@@ -124,7 +129,12 @@ function removeCustomLogo(d) {
 function nextStep(d) {
   const k = d.step;
   const fail = (msg) => { d.error = msg; return false; };
+  if (k === "name" && !Object.values(d.goals).some(Boolean)) return fail("Pick at least one thing to create.");
   if (k === "name" && !d.inputs.name.trim()) return fail("Please enter your restaurant name first.");
+  if (k === "name") {                                  // the goals answer the old "want a menu?" question
+    d.wantMenu = hasMenuGoal(d.goals);
+    d.menu.ordering = !!d.goals.onlineorder;
+  }
   if (k === "upload" && !d.myLogo) return fail("Upload your logo to continue, or go back and choose No.");
   if (k === "cuisine" && !d.cuisinePicked) return fail("Choose a cuisine to continue.");
   if (k === "cuisine" && d.cuisineSelect === "other" && !d.brand.customCuisine) return fail("Type your food style to continue.");
@@ -152,6 +162,14 @@ export const useStudio = create(immer((set, get) => ({
     nextStep(d);
   }),
   setError: (msg) => set(d => { d.error = msg; }),
+  // Online Order needs the online menu: picking Order adds Menu, dropping Menu drops Order
+  toggleGoal: (key) => set(d => {
+    const g = d.goals;
+    g[key] = !g[key];
+    if (key === "onlineorder" && g.onlineorder) g.onlinemenu = true;
+    if (key === "onlinemenu" && !g.onlinemenu) g.onlineorder = false;
+    d.error = Object.values(g).some(Boolean) ? "" : "Pick at least one thing to create.";
+  }),
 
   // ---------- brand ----------
   setInput: (field, value) => set(d => { d.inputs[field] = value; syncBrandFromInputs(d); }),
@@ -201,7 +219,7 @@ export const useStudio = create(immer((set, get) => ({
   newVariations: () => set(d => { d.variantSeed++; }),
 
   // ---------- menu questions ----------
-  chooseWantMenu: (v) => set(d => { d.wantMenu = v; goTo(d, v ? "hasmenu" : "mockups", true); }),
+  chooseWantMenu: (v) => set(d => { d.wantMenu = v; goTo(d, v ? "hasmenu" : "download", true); }),
   chooseHasMenu: (v) => set(d => { d.hasMenu = v; goTo(d, v ? "menuupload" : "menusample", true); }),
   chooseSampleMenu: (key) => set(d => { loadSample(d, key); goTo(d, "menu", true); }),
   loadSampleMenu: (key) => set(d => { loadSample(d, key); }),
@@ -220,7 +238,12 @@ export const useStudio = create(immer((set, get) => ({
     Object.assign(s, patch);
   }),
   setMsTab: (t) => set(d => { d.msTab = t; }),
-  setMenuZoom: (delta) => set(d => { d.menuZoom = delta === 0 ? 100 : Math.min(150, Math.max(50, d.menuZoom + delta)); }),
+  // delta 0 = back to "fit"; otherwise step from the zoom currently on screen (`from`)
+  setMenuZoom: (delta, from) => set(d => {
+    if (delta === 0) { d.menuZoomMode = "fit"; return; }
+    d.menuZoomMode = "manual";
+    d.menuZoom = Math.min(150, Math.max(20, Math.round(((from ?? d.menuZoom) + delta) / 10) * 10));
+  }),
   openModal: (m) => set(d => { d.modal = m; }),
   closeModal: () => set(d => { d.modal = null; }),
 

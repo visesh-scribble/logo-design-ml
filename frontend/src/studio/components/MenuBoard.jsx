@@ -78,29 +78,29 @@ export default function MenuBoard() {
   if (template === "infographic") {
     const all = categories.flatMap((cat, c) => cat.items.map((item, i) => ({ item, c, i })));
     return (
-      <div id="captureBoardTarget" className="menu-board-container w-full infographic-bg p-6 sm:p-8 rounded-2xl shadow-2xl relative">
+      <div id="captureBoardTarget" className="menu-board-container w-full infographic-bg p-8 rounded-2xl shadow-2xl relative">
         {/* HEADER RIBBON */}
         <div className="flex items-center justify-between pb-4 border-b-2 border-[#ebd9c3] mb-6">
           <div className="flex items-center space-x-3">
             <span className="text-3xl">✨</span>
             <div>
-              <Editable as="h1" className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#c2410c] uppercase font-['Montserrat'] leading-none" value={brand.name.toUpperCase()} />
-              <Editable as="div" className="inline-block bg-[#166534] text-white text-xs sm:text-sm font-extrabold px-3 py-1 rounded-full mt-2 uppercase tracking-wider" value={brand.tagline} />
+              <Editable as="h1" className="text-5xl font-black tracking-tight text-[#c2410c] uppercase font-['Montserrat'] leading-none" value={brand.name.toUpperCase()} />
+              <Editable as="div" className="inline-block bg-[#166534] text-white text-sm font-extrabold px-3 py-1 rounded-full mt-2 uppercase tracking-wider" value={brand.tagline} />
               <Editable as="p" className="text-xs text-[#78350f] font-semibold mt-1" value={headerSubtext} onCommit={t => s.setMenu({ headerSubtext: t })} />
             </div>
           </div>
-          {showLogo && <Logo className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-[#166534] p-1 bg-white shadow shrink-0 overflow-hidden" markup={logoMarkup} />}
+          {showLogo && <Logo className="w-28 h-28 rounded-full border-2 border-[#166534] p-1 bg-white shadow shrink-0 overflow-hidden" markup={logoMarkup} />}
         </div>
 
         {/* DISH CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           {all.map(({ item, c, i }, idx) => (
             <div key={item.uid} className="infographic-card p-3 flex flex-col justify-between space-y-2 relative">
               <div>
                 <div className="flex items-start space-x-2">
                   <div className="w-6 h-6 rounded-full bg-[#166534] text-white font-black text-xs flex items-center justify-center shrink-0">{item.number || idx + 1}</div>
                   <div className="flex-1">
-                    <h3 className="text-xs sm:text-sm font-extrabold text-[#9a3412] leading-tight flex items-center">
+                    <h3 className="text-sm font-extrabold text-[#9a3412] leading-tight flex items-center">
                       <VegBadge dietary={item.dietary} />
                       <Editable value={item.name} onCommit={field(c, i, "name")} />
                     </h3>
@@ -134,7 +134,7 @@ export default function MenuBoard() {
         </div>
 
         {/* FOOTER: QUICK TIPS & SAUCES */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6 pt-4 border-t-2 border-[#ebd9c3] text-xs">
+        <div className="grid grid-cols-3 gap-3 mt-6 pt-4 border-t-2 border-[#ebd9c3] text-xs">
           <div className="bg-[#fffbeb] border border-[#fde68a] p-3 rounded-xl">
             <span className="font-bold text-[#b45309] flex items-center space-x-1 mb-1"><span>💡</span><span className="uppercase tracking-wider">Quick Tips</span></span>
             <ul className="text-[10px] text-[#78350f] space-y-0.5 list-disc list-inside">
@@ -172,16 +172,16 @@ export default function MenuBoard() {
       <div id="captureBoardTarget" className="menu-board-container w-full photorow-bg p-8 rounded-2xl shadow-2xl relative font-sans">
         <div className="text-center pb-6 border-b border-white/10 mb-6">
           {showLogo && <Logo className="w-20 h-20 mx-auto mb-3 filter drop-shadow" markup={logoMarkup} />}
-          <Editable as="h1" className="text-3xl sm:text-4xl font-extrabold uppercase tracking-wide text-white" value={brand.name} />
+          <Editable as="h1" className="text-4xl font-extrabold uppercase tracking-wide text-white" value={brand.name} />
           <Editable as="p" className="text-xs text-amber-400 font-semibold tracking-widest uppercase mt-1" value={brand.tagline} />
         </div>
         <div className="space-y-6">
           {categories.map((cat, c) => (
             <div key={c}>
-              <div className="inline-block bg-[#f59e0b] text-[#111] font-black text-xs sm:text-sm px-4 py-1.5 rounded-md uppercase tracking-wider mb-4 shadow">{cat.name}</div>
+              <div className="inline-block bg-[#f59e0b] text-[#111] font-black text-sm px-4 py-1.5 rounded-md uppercase tracking-wider mb-4 shadow">{cat.name}</div>
               <div className="space-y-2.5">
                 {cat.items.map((item, i) => (
-                  <div key={item.uid} className="flex items-center text-xs sm:text-sm font-bold text-slate-100 hover:text-amber-300 transition py-1">
+                  <div key={item.uid} className="flex items-center text-sm font-bold text-slate-100 hover:text-amber-300 transition py-1">
                     {item.photo ? (
                       <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-amber-400/80 mr-3 shrink-0 shadow">
                         <img src={item.photo} alt={item.name} className="w-full h-full object-cover" />
@@ -215,8 +215,8 @@ export default function MenuBoard() {
   if (template === "chinese") {
     return (
       <div id="captureBoardTarget" className="menu-board-container w-full trifold-chinese-bg p-6 rounded-2xl shadow-2xl relative">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1 bg-[#faebd7] border-2 border-[#e0cda9] p-4 rounded-xl flex flex-col justify-between space-y-4">
+        <div className="grid grid-cols-4 gap-6">
+          <div className="col-span-1 bg-[#faebd7] border-2 border-[#e0cda9] p-4 rounded-xl flex flex-col justify-between space-y-4">
             <div>
               <div className="grid grid-cols-2 gap-2 mb-3">
                 <img src="https://images.unsplash.com/photo-1585032226651-759b368d7246?w=300&auto=format&fit=crop&q=80" className="w-full h-20 object-cover rounded-lg shadow" alt="" />
@@ -238,7 +238,7 @@ export default function MenuBoard() {
               </div>
             </div>
           </div>
-          <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="col-span-3 grid grid-cols-3 gap-5">
             {categories.map((cat, c) => (
               <div key={c} className="space-y-2">
                 <Editable as="h3" className="text-base font-extrabold text-[#991b1b] font-['Volkhov'] border-b border-[#991b1b]/30 pb-0.5" value={cat.name} onCommit={catName(c)} />
@@ -272,10 +272,10 @@ export default function MenuBoard() {
   // ----------------------------------------------------
   if (template === "editorial") {
     return (
-      <div id="captureBoardTarget" className="menu-board-container w-full editorial-bg p-8 sm:p-10 rounded-2xl shadow-2xl relative font-serif">
+      <div id="captureBoardTarget" className="menu-board-container w-full editorial-bg p-10 rounded-2xl shadow-2xl relative font-serif">
         <div className="text-center pb-8 border-b border-[#e5ded5] mb-8">
           {showLogo && <Logo className="w-24 h-24 mx-auto mb-3" markup={logoMarkup} />}
-          <Editable as="h1" className="text-3xl sm:text-4xl font-black uppercase text-[#2b2623] tracking-widest" value={brand.name} />
+          <Editable as="h1" className="text-4xl font-black uppercase text-[#2b2623] tracking-widest" value={brand.name} />
           <Editable as="p" className="text-xs text-[#78716c] font-sans font-semibold tracking-wider mt-1" value={brand.tagline} />
         </div>
         <div className="space-y-8 max-w-2xl mx-auto">
@@ -283,12 +283,12 @@ export default function MenuBoard() {
             <div key={c} className="text-center space-y-4">
               <div className="flex items-center justify-center space-x-2">
                 {cat.iconBadge && <span className="w-7 h-7 rounded-full bg-[#f5e6d3] text-sm flex items-center justify-center">{cat.iconBadge}</span>}
-                <Editable as="h2" className="text-xl sm:text-2xl font-bold underline text-[#2b2623] decoration-[#2b2623]/40 decoration-1 underline-offset-4" value={cat.name} onCommit={catName(c)} />
+                <Editable as="h2" className="text-2xl font-bold underline text-[#2b2623] decoration-[#2b2623]/40 decoration-1 underline-offset-4" value={cat.name} onCommit={catName(c)} />
               </div>
               <div className="space-y-4">
                 {cat.items.map((item, i) => (
                   <div key={item.uid} className="text-center">
-                    <div className="flex items-baseline justify-center space-x-2 text-sm sm:text-base font-bold text-[#2b2623]">
+                    <div className="flex items-baseline justify-center space-x-2 text-base font-bold text-[#2b2623]">
                       <VegBadge dietary={item.dietary} />
                       <Editable className="uppercase tracking-wide" value={item.name} onCommit={field(c, i, "name")} />
                       <Editable className="font-mono text-sm text-[#57534e]" value={formatPrice(item.price)} onCommit={price(c, i)} />
@@ -320,13 +320,13 @@ export default function MenuBoard() {
   }[template] || [];
   const [themeContainerClass, headerTitleColor, catTitleColor, itemTitleColor, descColor, priceColor] =
     theme.length ? theme : ["luxe-bg text-slate-100", "text-[#d4af37]", "text-[#d4af37] border-b border-[#d4af37]/40", "text-white", "text-slate-400", "text-[#d4af37]"];
-  const colGridClass = { 1: "grid-cols-1", 2: "grid-cols-1 md:grid-cols-2", 3: "grid-cols-1 md:grid-cols-3", 4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4" }[columns] || "grid-cols-1";
+  const colGridClass = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" }[columns] || "grid-cols-1";
 
   return (
     <div id="captureBoardTarget" className={`menu-board-container w-full ${themeContainerClass} p-8 rounded-2xl shadow-2xl relative`}>
       <header className="flex flex-col items-center justify-center text-center pb-6 border-b border-white/10 mb-8">
         {showLogo && <Logo className="w-28 h-28 mb-3" markup={logoMarkup} />}
-        <Editable as="h1" className={`text-3xl sm:text-4xl font-black uppercase ${headerTitleColor}`} value={brand.name} />
+        <Editable as="h1" className={`text-4xl font-black uppercase ${headerTitleColor}`} value={brand.name} />
         <Editable as="p" className="text-xs font-semibold tracking-widest uppercase mt-1 opacity-80" value={brand.tagline} />
       </header>
       <div className={`grid ${colGridClass} gap-8`}>

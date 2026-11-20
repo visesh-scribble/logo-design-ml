@@ -3,14 +3,14 @@ import { fileBase, menuToCSV, saveBlobAs } from "../../shared/files.js";
 
 // High-res PNG of the board (2x). html2canvas is only downloaded the first time someone exports.
 export async function exportMenuPNG() {
-  const target = document.getElementById("captureBoardTarget");
-  if (!target) return;
-  const zoomBox = document.getElementById("menuZoom");
-  const prevZoom = zoomBox ? zoomBox.style.zoom : "";
-  if (zoomBox) zoomBox.style.zoom = 1;               // export at true size, not the on-screen zoom
+  if (!document.getElementById("captureBoardTarget")) return;
+  // Show the board at its true size while the picture is taken (the on-screen fit/zoom stands down)
+  useStudio.setState({ boardExporting: true });
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   try {
+    const target = document.getElementById("captureBoardTarget");
     const html2canvas = (await import("html2canvas")).default;
-    const canvas = await html2canvas(target, { scale: 2, useCORS: true, backgroundColor: null, logging: false });
+    const canvas = await html2canvas(target, { scale: 2, useCORS: true, backgroundColor: null, logging: false, windowWidth: Math.max(window.innerWidth, 1280) });
     const a = document.createElement("a");
     a.download = `${fileBase(useStudio.getState().brand.name)}_menu_board.png`;
     a.href = canvas.toDataURL("image/png");
@@ -18,7 +18,7 @@ export async function exportMenuPNG() {
   } catch (err) {
     alert("Could not create the image: " + err.message);
   } finally {
-    if (zoomBox) zoomBox.style.zoom = prevZoom;
+    useStudio.setState({ boardExporting: false });
   }
 }
 

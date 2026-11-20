@@ -17,6 +17,28 @@ export function useMediaQuery(q) {
   return on;
 }
 
+// Width the menu board is designed (and exported) at. It is shown scaled to fit the screen.
+export const BOARD_WIDTH = 896;
+
+// Percentage that makes a `width`-px board fit inside `ref` (never above 100%). Follows resizes and rotation.
+export function useFitZoom(ref, width = BOARD_WIDTH) {
+  const [fit, setFit] = useState(100);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      const cs = getComputedStyle(el);
+      const inner = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      if (inner > 0) setFit(Math.max(20, Math.min(100, Math.floor((inner / width) * 100))));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref, width]);
+  return fit;
+}
+
 export function useWindowWidth() {
   const [w, setW] = useState(window.innerWidth);
   useEffect(() => {

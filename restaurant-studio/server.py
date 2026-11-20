@@ -165,6 +165,16 @@ class RestaurantStudioHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=PUBLIC_DIR, **kwargs)
 
+    def end_headers(self):
+        # Pages are always re-checked so visitors get the newest build right after an update.
+        # Built JS/CSS in /assets/ have a content hash in the name, so they can be cached for good.
+        p = urllib.parse.urlparse(self.path).path
+        if p.startswith("/assets/"):
+            self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+        elif not p.startswith("/api/"):
+            self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
+
     def do_GET(self):
         url = urllib.parse.urlparse(self.path)
         path = url.path

@@ -233,7 +233,7 @@ export function QrMenuModal() {
       </div>
       <p id="qrNote" className="text-[11px] text-[#92400e] bg-amber-50 border border-amber-200 rounded-lg p-2">{note}</p>
       <div className="flex flex-wrap justify-end gap-2 border-t border-[#f0eee6] pt-3">
-        <button onClick={() => window.open("/orders.html", "_blank")} className="px-4 py-2 bg-[#15803d] hover:bg-[#166534] text-white font-bold rounded-xl text-xs shadow-sm">Kitchen Orders</button>
+        {menu.ordering !== false && <button onClick={() => window.open("/orders.html", "_blank")} className="px-4 py-2 bg-[#15803d] hover:bg-[#166534] text-white font-bold rounded-xl text-xs shadow-sm">Kitchen Orders</button>}
         <button onClick={() => window.open(url, "_blank")} className="px-4 py-2 bg-white border border-[#d6d3cb] hover:bg-[#f5f4ef] text-[#1c1917] font-semibold rounded-xl text-xs">Open Link</button>
         <button onClick={download} className="px-4 py-2 bg-[#1c1917] hover:bg-[#292524] text-white font-bold rounded-xl text-xs shadow-sm">Download QR (PNG)</button>
       </div>
