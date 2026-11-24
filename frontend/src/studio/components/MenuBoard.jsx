@@ -38,15 +38,16 @@ function Logo({ className, markup }) {
   return <div className={className} dangerouslySetInnerHTML={{ __html: markup }} />;
 }
 
-// Strip at the bottom of every menu design: address, phone, hours, extra details and the location QR.
+// Strip at the bottom of every menu design: address, phone, hours, extra details, the online menu QR and the location QR.
 function ShopStrip() {
   const shop = useStudio(s => s.menu.shop);
   const showFooter = useStudio(s => s.menu.showFooter);
   const brandName = useStudio(s => s.brand.name);
   const qr = useQr(shop.locQr ? locationUrl(shop, brandName) : "");
+  const menuQr = useQr(shop.menuQr ? (shop.menuLink || "").trim() : "");
   const t = { address: shop.address.trim(), phone: shop.phone.trim(), hours: shop.hours.trim(), extra: shop.extra.trim() };
   if (!showFooter) return null;
-  if (!t.address && !t.phone && !t.hours && !t.extra && !qr) return null;
+  if (!t.address && !t.phone && !t.hours && !t.extra && !qr && !menuQr) return null;
   const line = (icon, v) => v ? <div>{icon} {v}</div> : null;
   return (
     <div className="shop-strip">
@@ -54,7 +55,12 @@ function ShopStrip() {
         <b>{brandName || "Visit us"}</b>
         {line("📍", t.address)}{line("📞", t.phone)}{line("🕒", t.hours)}{line("ℹ️", t.extra)}
       </div>
-      {qr && <div className="shop-qr"><img src={qr} alt="Location QR code" /><small>Scan to find us</small></div>}
+      {(qr || menuQr) && (
+        <div className="shop-qrs">
+          {menuQr && <div className="shop-qr"><img src={menuQr} alt="Online menu QR code" /><small>Scan for menu</small></div>}
+          {qr && <div className="shop-qr"><img src={qr} alt="Location QR code" /><small>Scan to find us</small></div>}
+        </div>
+      )}
     </div>
   );
 }

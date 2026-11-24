@@ -64,7 +64,7 @@ const initialState = {
     ordering: true,              // phone menu lets customers order (false = view-only online menu)
     headerSubtext: "Crispy, Cheesy & Absolutely Delicious! • Perfect for Parties & Cravings",
     categories: withUids(JSON.parse(JSON.stringify(SAMPLE.categories))),
-    shop: { address: "", phone: "", hours: "", extra: "", locQr: false, mapLink: "", coords: "" }
+    shop: { address: "", phone: "", hours: "", extra: "", locQr: false, mapLink: "", coords: "", menuQr: false, menuLink: "" }
   },
   aiAdded: {},                 // dish uid -> "Veg 97%, Spicy 84%"
   // menu studio UI

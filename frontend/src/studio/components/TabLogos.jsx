@@ -7,7 +7,6 @@ import { VARIANTS_PER_STYLE, VARIANT_NAMES, variantSVG, stripNum, selectedLogoIn
 import { downloadSVG, downloadSVGasPNG, fileBase } from "../../shared/files.js";
 import WizardFooter, { Eyebrow } from "./WizardFooter.jsx";
 import { Coverflow, Svg } from "./ui.jsx";
-import Showcase from "./Showcase.jsx";
 
 const INPUT = "w-full bg-[#fbfaf7] border border-[#d6d3cb] focus:border-[#c2410c] focus:bg-white focus:ring-1 focus:ring-[#c2410c] text-[#1c1917] rounded-xl px-3.5 py-2 text-sm transition";
 
@@ -135,7 +134,6 @@ export default function TabLogos() {
           </div>
         </div>
         {isQ && <WizardFooter inline />}
-        {isQ && def.q === 1 && <Showcase />}
       </div>
 
       {def.panel === "logos" && <LogoVariations />}

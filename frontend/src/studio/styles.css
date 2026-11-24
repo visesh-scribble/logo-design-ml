@@ -586,10 +586,11 @@ textarea.ms-field{resize:vertical;font-family:var(--font-ui)}
 .shop-strip .shop-lines{flex:1;min-width:0;font-size:.8rem;line-height:1.45}
 .shop-strip .shop-lines b{display:block;font-size:.95rem;margin-bottom:.15rem}
 .shop-strip .shop-lines div{overflow-wrap:anywhere}
+.shop-strip .shop-qrs{display:flex;gap:.75rem;flex:none}
 .shop-strip .shop-qr{flex:none;text-align:center}
 .shop-strip .shop-qr img{width:96px;height:96px;display:block;image-rendering:pixelated}
 .shop-strip .shop-qr small{display:block;font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-top:.25rem}
-@media (max-width:480px){.shop-strip{flex-direction:column;text-align:center}}
+@media (max-width:480px){.shop-strip{flex-direction:column;text-align:center}.shop-strip .shop-qrs{justify-content:center}}
 
 /* =========================================================
    EDITORIAL THEME — warm ivory paper, forest-green ink,

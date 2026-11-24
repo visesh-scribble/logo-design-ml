@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   LayoutGrid, List, Palette, SlidersHorizontal, Pencil, Upload, Clipboard, MapPin, LocateFixed,
-  ExternalLink, Download, Maximize2
+  ExternalLink, Download, Maximize2, QrCode, Link2
 } from "lucide-react";
 import { useStudio } from "../store.js";
 import { STEP_DEFS } from "../steps.js";
@@ -10,7 +10,7 @@ import { locationUrl, downloadQrCard, fileBase, qrDataUrl } from "../../shared/f
 import { Eyebrow } from "./WizardFooter.jsx";
 import MenuBoard, { useQr } from "./MenuBoard.jsx";
 import { handleMenuFile } from "./menuFiles.js";
-import { toggleFullScreenBoard } from "./menuExport.js";
+import { toggleFullScreenBoard, publishMenu } from "./menuExport.js";
 import { useMediaQuery, useFitZoom, BOARD_WIDTH } from "./ui.jsx";
 
 const MENU_TEMPLATES = [
@@ -44,6 +44,69 @@ export function downloadLocQrPNG() {
       filename: `${fileBase(s.brand.name) || "shop"}_location_qr.png`
     });
   });
+}
+
+export function downloadMenuQrPNG() {
+  const s = useStudio.getState();
+  const url = (s.menu.shop.menuLink || "").trim();
+  if (!url) return;
+  qrDataUrl(url).then(qrUrl => downloadQrCard({
+    qrUrl, brand: s.brand, title: "SCAN FOR MENU", lines: ["Point your phone camera at the code"],
+    filename: `${fileBase(s.brand.name) || "shop"}_menu_qr.png`
+  }));
+}
+
+// Online menu QR shown on the board: the owner's own link, or the app's phone menu.
+function MenuQr() {
+  const shop = useStudio(s => s.menu.shop);
+  const setShop = useStudio(s => s.setShop);
+  const [msg, setMsg] = useState("");
+  const url = shop.menuQr ? (shop.menuLink || "").trim() : "";
+  const qr = useQr(url);
+
+  const usePhoneMenu = () => {
+    const s = useStudio.getState();
+    if (!s.menu.categories.length) { setMsg("Load or add a menu first."); return; }
+    setMsg("Preparing your phone menu…");
+    publishMenu(s.brand, s.menu)
+      .then(link => {
+        setShop({ menuLink: link });
+        setMsg("Demo link: works only for phones on the same Wi-Fi as this computer, while the app is running. For real customers, paste your public menu link instead.");
+      })
+      .catch(err => setMsg("Could not publish the menu: " + err.message + ". Restart the server (start.bat) and try again."));
+  };
+
+  return (
+    <div className="ms-grp">
+      <span className="ms-lab">Add an online menu QR to the board?</span>
+      <div className="ms-seg">
+        <button type="button" id="btnMenuQrYes" {...press(shop.menuQr === true)} onClick={() => setShop({ menuQr: true })}><QrCode />Yes</button>
+        <button type="button" id="btnMenuQrNo" {...press(shop.menuQr !== true)} onClick={() => setShop({ menuQr: false })}>No</button>
+      </div>
+      {shop.menuQr && (
+        <div id="menuQrBox" style={{ marginTop: ".75rem" }}>
+          <div className="ms-stack">
+            <input type="url" id="shopMenuLink" className="ms-field" placeholder="Online menu link, e.g. https://yourshop.com/menu" aria-label="Online menu link"
+              value={shop.menuLink || ""} onChange={e => { setMsg(""); setShop({ menuLink: e.target.value }); }} />
+            <button type="button" className="ms-row" onClick={usePhoneMenu}><span className="ms-ico"><Link2 /></span><span><b>Use our phone menu link</b><small>Publishes this menu for phones</small></span></button>
+          </div>
+          <p id="menuQrMsg" className="ms-hint">{msg || (url ? "Customers scan this to open your menu." : "Paste your website, Zomato or Swiggy link.")}</p>
+          {qr && (
+            <>
+              <div className="loc-qr-card">
+                <div><img src={qr} alt="Online menu QR code" style={{ width: 160, height: 160, display: "block", margin: "0 auto" }} /></div>
+                <small>Scan for menu</small>
+              </div>
+              <div className="ms-stack" style={{ marginTop: ".6rem" }}>
+                <button type="button" className="ms-row" onClick={() => window.open(/^https?:\/\//i.test(url) ? url : "https://" + url, "_blank", "noopener")}><span className="ms-ico"><ExternalLink /></span><span><b>Test the link</b><small>Opens the link inside the QR</small></span></button>
+                <button type="button" className="ms-row ms-row-primary" onClick={downloadMenuQrPNG}><span className="ms-ico"><Download /></span><span><b>Download menu QR</b><small>PNG to print or share</small></span></button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function LocationQr() {
@@ -222,6 +285,7 @@ function SettingsPanel({ sheet, open, onClose }) {
           <p className="ms-hint">Shown at the bottom of your menu board.</p>
         </div>
 
+        <MenuQr />
         <LocationQr />
       </div>
 

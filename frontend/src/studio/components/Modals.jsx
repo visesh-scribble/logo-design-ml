@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FileText, X, Edit3, Sparkles, Plus, QrCode } from "lucide-react";
 import { useStudio, cleanMenu } from "../store.js";
+import { publishMenu } from "./menuExport.js";
 import { parseRawTextLocally, qrDataUrl, downloadQrCard, fileBase } from "../../shared/files.js";
 
 function ModalShell({ id, maxW, extra = "", children }) {
@@ -195,11 +196,11 @@ export function QrMenuModal() {
   useEffect(() => {
     if (!menu.categories.length) { setNote("Load or add a menu first, then open this again."); return; }
     setNote("Preparing your phone menu…");
-    fetch("/api/publish-menu", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand, menu: cleanMenu(menu) }) })
-      .then(r => r.json())
-      .then(res => {
-        if (!res.success) throw new Error(res.error);
-        setUrl(res.url);
+    const saved = menu.shop.menuQr && (menu.shop.menuLink || "").trim();
+    if (saved) { setUrl(saved); setNote("Using the online menu link from your menu board settings."); return; }
+    publishMenu(brand, menu)
+      .then(link => {
+        setUrl(link);
         setNote("Demo mode: this link works only for phones on the same Wi-Fi as this computer, while the app is running. For real customers, put the menu online and paste that link above.");
       })
       .catch(err => setNote("Could not publish the menu: " + err.message + ". Restart the server (start.bat) and try again."));

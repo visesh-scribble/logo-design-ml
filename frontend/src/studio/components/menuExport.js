@@ -28,6 +28,14 @@ export function exportMenuCSV() {
   saveBlobAs(new Blob([csv], { type: "text/csv;charset=utf-8;" }), `${fileBase(s.brand.name)}_menu.csv`);
 }
 
+// Publishes the menu to the local server and resolves with the phone-menu link.
+export async function publishMenu(brand, menu) {
+  const r = await fetch("/api/publish-menu", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand, menu: cleanMenu(menu) }) });
+  const res = await r.json();
+  if (!res.success) throw new Error(res.error || "Publish failed");
+  return res.url;
+}
+
 export function printMenu() { window.print(); }
 
 export function toggleFullScreenBoard() {
