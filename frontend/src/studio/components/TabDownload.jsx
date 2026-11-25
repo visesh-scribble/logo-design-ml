@@ -1,4 +1,4 @@
-import { Image, PenTool, Printer, Tv, FileSpreadsheet, QrCode, MapPin, ChefHat, ExternalLink, FileText } from "lucide-react";
+import { Check, BookOpen, Smartphone, ShoppingBag, Image, PenTool, Printer, Tv, FileSpreadsheet, QrCode, MapPin, ChefHat, ExternalLink, FileText } from "lucide-react";
 import { useStudio } from "../store.js";
 import { STEP_DEFS } from "../steps.js";
 import { selectedLogoInfo, interpretStyleWords } from "../../shared/brand.js";
@@ -26,6 +26,18 @@ export default function TabDownload() {
     chips: interpretStyleWords(s.reference.notes + " " + s.styleText).chips,
     filename: `${base}_design_brief.png`
   });
+
+  // "You have created:" one line per thing the person made
+  const dishes = s.menu.categories.reduce((n, c) => n + c.items.length, 0);
+  const menuSize = `${dishes} dish${dishes === 1 ? "" : "es"} in ${s.menu.categories.length} section${s.menu.categories.length === 1 ? "" : "s"}`;
+  const made = [
+    g.logo && [PenTool, "Logo", s.selectedLogo.kind === "custom" ? "Your own logo, adjusted" : logo.title],
+    hasRef && [FileText, "Design brief", "Your reference and notes for a designer"],
+    g.menucard && hasMenu && [BookOpen, "Menu card", menuSize + ", for print and TV"],
+    g.onlinemenu && hasMenu && [Smartphone, "Online menu", "A QR menu customers open on their phones"],
+    g.onlineorder && hasMenu && [ShoppingBag, "Online ordering", "Table orders that go to your kitchen screen"],
+    hasLocQr && [MapPin, "Location QR", "Opens your shop on Google Maps"]
+  ].filter(Boolean);
 
   const group = (title, sub, children) => (
     <section className="dlp-group">
@@ -63,6 +75,21 @@ export default function TabDownload() {
 
         {/* Downloads */}
         <div className="dlp-groups">
+          {made.length > 0 && (
+            <section className="made" aria-labelledby="madeHead">
+              <h2 id="madeHead">You have created:</h2>
+              <ul>
+                {made.map(([Icon, title, sub]) => (
+                  <li key={title}>
+                    <span className="made-ico"><Icon aria-hidden="true" /></span>
+                    <span className="made-txt"><b>{title}</b><small>{sub}</small></span>
+                    <span className="made-check" aria-hidden="true"><Check /></span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           {online && hasMenu && (
             <div className="online-ready">
               <span className="online-ico"><QrCode /></span>

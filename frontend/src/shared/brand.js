@@ -119,10 +119,17 @@ const PRESET_BRAND = {
   name: "Sample Bistro", tagline: "Fresh & Delicious", estYear: "EST. 2024", cuisine: "veg",
   primaryColor: "#d4af37", bgColor: "#111827", accentColor: "#ffffff", icon: "chefhat"
 };
-let PRESET_SVGS = null;
-export function presetSVG(i) {
-  if (!PRESET_SVGS) PRESET_SVGS = BASE_LOGOS.map(t => t.generate(Object.assign({}, PRESET_BRAND)));
-  return PRESET_SVGS[i];
+// Sample logo for each style, drawn in the colour theme the visitor picked (cached per theme)
+const PRESET_SVGS = new Map();
+export function presetSVG(i, colors) {
+  const c = {
+    primaryColor: (colors && colors.primaryColor) || PRESET_BRAND.primaryColor,
+    bgColor: (colors && colors.bgColor) || PRESET_BRAND.bgColor,
+    accentColor: (colors && colors.accentColor) || PRESET_BRAND.accentColor
+  };
+  const key = c.primaryColor + c.bgColor + c.accentColor;
+  if (!PRESET_SVGS.has(key)) PRESET_SVGS.set(key, BASE_LOGOS.map(t => t.generate(Object.assign({}, PRESET_BRAND, c))));
+  return PRESET_SVGS.get(key)[i];
 }
 
 export const stripNum = (title) => title.replace(/^\d+\.\s*/, "");

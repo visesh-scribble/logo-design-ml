@@ -26,7 +26,7 @@ export default function WizardFooter({ inline }) {
         <span id="wizStepLabel" style={{ display: "none" }} />
         <div className="foot-actions">
           <button id="wizSkip" onClick={s.skipStep} className={"btn-text" + (def.optional ? "" : " hidden")}>Skip</button>
-          <button id="wizNext" onClick={s.nextStep} className={"btn-next" + (CHOICE_STEPS.includes(s.step) ? " hidden" : "")}>{nextLabel(s.step, s)}</button>
+          <button id="wizNext" onClick={s.nextStep} className={"btn-next" + (CHOICE_STEPS.includes(s.step) || s.step === "download" ? " hidden" : "")}>{nextLabel(s.step, s)}</button>
         </div>
       </div>
     </footer>

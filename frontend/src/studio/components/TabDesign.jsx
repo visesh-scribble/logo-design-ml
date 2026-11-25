@@ -22,7 +22,7 @@ export default function TabDesign() {
   const swatch = (key, primary, bg, accent, title) => (
     <button key={key} type="button" className={"pal" + (same(primary, bg) ? " on" : "")} title={title} aria-pressed={same(primary, bg)}
       onClick={() => s.setPalette(primary, bg, accent)}>
-      <span className="pal-sw" style={{ background: `linear-gradient(135deg, ${bg} 0 50%, ${primary} 50% 100%)` }} />
+      <span className="pal-sw" style={{ background: primary }} />
       <span className="pal-name">{title}</span>
     </button>
   );
@@ -57,7 +57,7 @@ export default function TabDesign() {
               return (
                 <button key={i} type="button" role="radio" aria-checked={on ? "true" : "false"} onClick={() => s.pickStyle(i)}
                   className={"style-card" + (on ? " selected" : "")}>
-                  <div className="style-card-art" dangerouslySetInnerHTML={{ __html: presetSVG(i) }} />
+                  <div className="style-card-art" dangerouslySetInnerHTML={{ __html: presetSVG(i, b) }} />
                   <div><span className="style-card-title">{stripNum(t.title)}</span><span className="style-card-sub">{t.style}</span></div>
                   <span className="style-card-check" aria-hidden="true">{on ? "✓" : ""}</span>
                 </button>
