@@ -2,8 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useStudio } from "../store.js";
-import { variantSVG, CUISINE_PHOTOS, unsplash, VARIANT_NAMES } from "../../shared/brand.js";
-import { Svg } from "./ui.jsx";
+import { variantSVG, CUISINE_PHOTOS, unsplash, VARIANT_NAMES, CUISINE_PRESETS, DEFAULT_LOGO } from "../../shared/brand.js";
+import { REFERENCE_SAMPLES } from "../../shared/logos.js";
+import { Svg, useFitZoom, BOARD_WIDTH } from "./ui.jsx";
+import { MenuBoardPreview } from "./MenuBoard.jsx";
+import { SAMPLES as MENU_SAMPLES } from "./TabMenuAsk.jsx";
 
 // "What you'll create": live samples of a logo, a printed menu card and the phone menu,
 // shown under the first brand questions. They use the name being typed, so they update as you go.
@@ -127,9 +130,45 @@ function PhoneArt({ demo, name, ordering }) {
   );
 }
 
+// Board state for one of our sample menus, set up the way loadSample + applyCuisine do in the store
+const noop = () => {};
+function sampleBoardState(key) {
+  const sample = REFERENCE_SAMPLES[key];
+  const preset = CUISINE_PRESETS[sample.cuisine] || {};
+  const live = useStudio.getState();
+  return {
+    menu: {
+      ...live.menu,
+      template: sample.template,
+      currency: sample.currency,
+      categories: sample.categories.map((c, ci) => ({ ...c, items: c.items.map((it, i) => ({ ...it, uid: `${key}-${ci}-${i}` })) })),
+      shop: { address: "", phone: "", hours: "", extra: "", locQr: false, menuQr: false, menuLink: "", mapLink: "", coords: "" },
+      showFooter: false
+    },
+    brand: {
+      name: sample.brandName, tagline: sample.tagline, estYear: sample.estYear, cuisine: sample.cuisine,
+      icon: preset.icon || "chefhat", primaryColor: preset.color || "#d4af37", bgColor: preset.bg || "#111827", accentColor: preset.accent || "#ffffff"
+    },
+    selectedLogo: DEFAULT_LOGO,
+    myLogo: null,
+    updateItem: noop, updateCatName: noop, setMenu: noop
+  };
+}
+
+// A real menu board, scaled down to fit the tile and cropped to its top part
+function MenuSampleArt({ state }) {
+  const ref = useRef(null);
+  const zoom = useFitZoom(ref, BOARD_WIDTH, 5);       // phone tiles need under 20%
+  return (
+    <div className="scm-board-art" ref={ref} aria-hidden="true">
+      <div style={{ zoom: zoom / 100, width: BOARD_WIDTH }}><MenuBoardPreview state={state} /></div>
+    </div>
+  );
+}
+
 const MODAL_TEXT = {
   logo: ["Logo samples", "7 logo styles, each with 5 colour and type variations."],
-  menu: ["Menu card samples", "Printable menus you can also download as PDF or show on a TV screen."],
+  menu: ["Menu card samples", "Our ready-made menus. Print them, download a PDF or show them on a TV screen."],
   phone: ["Online menu samples", "Customers scan a QR code at the table and see your menu on their phone."]
 };
 
@@ -157,6 +196,12 @@ function SamplesModal({ kind, ordering, onClose }) {
         sub: `${BASE_STYLE_NAMES[base]} · ${VARIANT_NAMES[v]}`,
         art: <div className="sc-art scm-logo-art"><Svg className="scm-logo" markup={variantSVG(base, v, 0, logoBrand(b))} /></div>
       })));
+    }
+    if (kind === "menu") {
+      return MENU_SAMPLES.map(([key, , title]) => {
+        const state = sampleBoardState(key);
+        return { key, label: title, sub: state.brand.name, art: <MenuSampleArt state={state} /> };
+      });
     }
     return DEMO_BRANDS.map(b => ({
       key: b.key,
@@ -187,7 +232,9 @@ function SamplesModal({ kind, ordering, onClose }) {
             </figure>
           ))}
         </div>
-        <p className="scm-foot">Samples for made-up restaurants. Yours will use your name and colours.</p>
+        <p className="scm-foot">{kind === "menu"
+          ? "Pick one of these when you make your menu, then change every dish, price and colour."
+          : "Samples for made-up restaurants. Yours will use your name and colours."}</p>
       </div>
     </div>,
     document.body

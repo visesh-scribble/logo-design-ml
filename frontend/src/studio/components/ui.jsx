@@ -21,7 +21,7 @@ export function useMediaQuery(q) {
 export const BOARD_WIDTH = 896;
 
 // Percentage that makes a `width`-px board fit inside `ref` (never above 100%). Follows resizes and rotation.
-export function useFitZoom(ref, width = BOARD_WIDTH) {
+export function useFitZoom(ref, width = BOARD_WIDTH, min = 20) {
   const [fit, setFit] = useState(100);
   useLayoutEffect(() => {
     const el = ref.current;
@@ -29,7 +29,7 @@ export function useFitZoom(ref, width = BOARD_WIDTH) {
     const measure = () => {
       const cs = getComputedStyle(el);
       const inner = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-      if (inner > 0) setFit(Math.max(20, Math.min(100, Math.floor((inner / width) * 100))));
+      if (inner > 0) setFit(Math.max(min, Math.min(100, Math.floor((inner / width) * 100))));
     };
     measure();
     const ro = new ResizeObserver(measure);

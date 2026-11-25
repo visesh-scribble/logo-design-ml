@@ -1,18 +1,34 @@
 // RENDER MENU BOARD CANVAS (REFERENCE-ACCURATE TEMPLATES)
 // Same 7 designs and markup as the original renderMenuBoard(), written as React components.
 // Text on the board is click-to-edit; dish names, prices, descriptions and section names are saved back to the menu.
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useStudio } from "../store.js";
 import { selectedLogoInfo } from "../../shared/brand.js";
 import { locationUrl, qrDataUrl } from "../../shared/files.js";
 
+// Board data: the live store, or a fixed sample state when previewing (see MenuBoardPreview).
+// Previews are read-only and never carry the export id.
+const BoardContext = createContext(null);
+function useBoard(sel = (s) => s) {
+  const override = useContext(BoardContext);
+  const live = useStudio(sel);                  // always called, to keep hook order stable
+  return override ? sel(override) : live;
+}
+const usePreview = () => useContext(BoardContext) !== null;
+
+// A sample menu drawn with the real board design, not editable
+export function MenuBoardPreview({ state }) {
+  return <BoardContext.Provider value={state}><MenuBoard /></BoardContext.Provider>;
+}
+
 // contentEditable text that React does not fight with: the DOM text is only replaced when the value changes.
 function Editable({ as: Tag = "span", className, value, onCommit }) {
   const ref = useRef(null);
+  const preview = usePreview();
   useLayoutEffect(() => { if (ref.current && ref.current.textContent !== String(value ?? "")) ref.current.textContent = value ?? ""; }, [value]);
   return (
-    <Tag ref={ref} className={className} contentEditable suppressContentEditableWarning
-      onBlur={onCommit ? e => { const t = e.currentTarget.textContent.trim(); if (t !== String(value ?? "").trim()) onCommit(t); } : undefined} />
+    <Tag ref={ref} className={className} contentEditable={!preview} suppressContentEditableWarning
+      onBlur={onCommit && !preview ? e => { const t = e.currentTarget.textContent.trim(); if (t !== String(value ?? "").trim()) onCommit(t); } : undefined} />
   );
 }
 
@@ -28,7 +44,7 @@ export function useQr(text, opts) {
 
 // Helper for FSSAI Veg/Non-Veg badges
 function VegBadge({ dietary }) {
-  const show = useStudio(s => s.menu.showVegBadges);
+  const show = useBoard(s => s.menu.showVegBadges);
   if (!show) return null;
   const isNonVeg = (dietary || []).some(d => /non-veg|chicken|fish|egg|prawn/.test(String(d).toLowerCase()));
   return isNonVeg ? <span className="badge-nonveg mr-1.5" title="Non-Vegetarian" /> : <span className="badge-veg mr-1.5" title="100% Vegetarian" />;
@@ -40,9 +56,9 @@ function Logo({ className, markup }) {
 
 // Strip at the bottom of every menu design: address, phone, hours, extra details, the online menu QR and the location QR.
 function ShopStrip() {
-  const shop = useStudio(s => s.menu.shop);
-  const showFooter = useStudio(s => s.menu.showFooter);
-  const brandName = useStudio(s => s.brand.name);
+  const shop = useBoard(s => s.menu.shop);
+  const showFooter = useBoard(s => s.menu.showFooter);
+  const brandName = useBoard(s => s.brand.name);
   const qr = useQr(shop.locQr ? locationUrl(shop, brandName) : "");
   const menuQr = useQr(shop.menuQr ? (shop.menuLink || "").trim() : "");
   const t = { address: shop.address.trim(), phone: shop.phone.trim(), hours: shop.hours.trim(), extra: shop.extra.trim() };
@@ -66,7 +82,8 @@ function ShopStrip() {
 }
 
 export default function MenuBoard() {
-  const s = useStudio();
+  const s = useBoard();
+  const boardId = usePreview() ? undefined : "captureBoardTarget";
   const { template, columns, currency, showLogo, showDesc, showFooter, headerSubtext, categories } = s.menu;
   const brand = s.brand;
   const logoMarkup = selectedLogoInfo(s.selectedLogo, s.myLogo).generate(brand);
@@ -84,7 +101,7 @@ export default function MenuBoard() {
   if (template === "infographic") {
     const all = categories.flatMap((cat, c) => cat.items.map((item, i) => ({ item, c, i })));
     return (
-      <div id="captureBoardTarget" className="menu-board-container w-full infographic-bg p-8 rounded-2xl shadow-2xl relative">
+      <div id={boardId} className="menu-board-container w-full infographic-bg p-8 rounded-2xl shadow-2xl relative">
         {/* HEADER RIBBON */}
         <div className="flex items-center justify-between pb-4 border-b-2 border-[#ebd9c3] mb-6">
           <div className="flex items-center space-x-3">
@@ -175,7 +192,7 @@ export default function MenuBoard() {
   // ----------------------------------------------------
   if (template === "photorow") {
     return (
-      <div id="captureBoardTarget" className="menu-board-container w-full photorow-bg p-8 rounded-2xl shadow-2xl relative font-sans">
+      <div id={boardId} className="menu-board-container w-full photorow-bg p-8 rounded-2xl shadow-2xl relative font-sans">
         <div className="text-center pb-6 border-b border-white/10 mb-6">
           {showLogo && <Logo className="w-20 h-20 mx-auto mb-3 filter drop-shadow" markup={logoMarkup} />}
           <Editable as="h1" className="text-4xl font-extrabold uppercase tracking-wide text-white" value={brand.name} />
@@ -220,7 +237,7 @@ export default function MenuBoard() {
   // ----------------------------------------------------
   if (template === "chinese") {
     return (
-      <div id="captureBoardTarget" className="menu-board-container w-full trifold-chinese-bg p-6 rounded-2xl shadow-2xl relative">
+      <div id={boardId} className="menu-board-container w-full trifold-chinese-bg p-6 rounded-2xl shadow-2xl relative">
         <div className="grid grid-cols-4 gap-6">
           <div className="col-span-1 bg-[#faebd7] border-2 border-[#e0cda9] p-4 rounded-xl flex flex-col justify-between space-y-4">
             <div>
@@ -278,7 +295,7 @@ export default function MenuBoard() {
   // ----------------------------------------------------
   if (template === "editorial") {
     return (
-      <div id="captureBoardTarget" className="menu-board-container w-full editorial-bg p-10 rounded-2xl shadow-2xl relative font-serif">
+      <div id={boardId} className="menu-board-container w-full editorial-bg p-10 rounded-2xl shadow-2xl relative font-serif">
         <div className="text-center pb-8 border-b border-[#e5ded5] mb-8">
           {showLogo && <Logo className="w-24 h-24 mx-auto mb-3" markup={logoMarkup} />}
           <Editable as="h1" className="text-4xl font-black uppercase text-[#2b2623] tracking-widest" value={brand.name} />
@@ -329,7 +346,7 @@ export default function MenuBoard() {
   const colGridClass = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" }[columns] || "grid-cols-1";
 
   return (
-    <div id="captureBoardTarget" className={`menu-board-container w-full ${themeContainerClass} p-8 rounded-2xl shadow-2xl relative`}>
+    <div id={boardId} className={`menu-board-container w-full ${themeContainerClass} p-8 rounded-2xl shadow-2xl relative`}>
       <header className="flex flex-col items-center justify-center text-center pb-6 border-b border-white/10 mb-8">
         {showLogo && <Logo className="w-28 h-28 mb-3" markup={logoMarkup} />}
         <Editable as="h1" className={`text-4xl font-black uppercase ${headerTitleColor}`} value={brand.name} />

@@ -6,7 +6,8 @@ import { handleMenuFile } from "./menuFiles.js";
 
 const img = (id) => ({ backgroundImage: `url(https://images.unsplash.com/${id}?w=600&q=70&auto=format&fit=crop)` });
 
-const SAMPLES = [
+// The sample menus to start from (also shown in the "Menu card samples" popup)
+export const SAMPLES = [
   ["veg_starters", "photo-1601050690597-df0568f70950", "Veg Starters", "8 crispy, cheesy vegetarian starters."],
   ["indian_main", "photo-1546833999-b9f581a1996d", "Indian Main Course", "Curries, breads and rice with a photo row."],
   ["hongkong_chinese", "photo-1563245372-f21724e3856d", "Hong Kong Chinese", "Noodles, dim sum and wok dishes."],

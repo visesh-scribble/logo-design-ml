@@ -944,6 +944,8 @@ textarea.ms-field{resize:vertical;font-family:var(--font-ui)}
 .scm-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.9rem}
 .scm-tile{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-1)}
 .scm-tile .sc-art{height:250px}
+.scm-board-art{height:250px;overflow:hidden;padding:12px 12px 0;background:linear-gradient(160deg,#E7DFD0,#D9CFBD);pointer-events:none}
+.scm-board-art .menu-board-container{box-shadow:0 6px 18px rgba(0,0,0,.18)}
 .scm-logo-art{display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 45%,#F3EBDD,#E9E1D2)}
 .scm-logo-art .scm-logo{width:168px;height:168px;border-radius:12px;overflow:hidden;box-shadow:0 10px 24px -12px rgba(22,32,27,.45)}
 .scm-foot{margin:1rem 0 0;font-size:.78rem;color:var(--muted);text-align:center}
@@ -955,6 +957,7 @@ textarea.ms-field{resize:vertical;font-family:var(--font-ui)}
   .scm{max-height:92vh;border-radius:18px 18px 0 0;padding:1rem 16px}
   .scm-grid{gap:.6rem}
   .scm-tile .sc-art{height:220px}
+  .scm-board-art{height:220px}
   .scm-logo-art .scm-logo{width:120px;height:120px}
   .scm-menu .sc-menu{width:88%}
 }
