@@ -241,7 +241,7 @@ function SamplesModal({ kind, ordering, onClose }) {
   );
 }
 
-export default function Showcase() {
+export default function Showcase({ slides }) {
   const picked = useStudio(s => s.goals);
   // Nothing picked yet (first screen): show everything we can make
   const goals = Object.values(picked).some(Boolean) ? picked : { logo: true, menucard: true, onlinemenu: true, onlineorder: true };
@@ -274,40 +274,57 @@ export default function Showcase() {
   });
   const More = () => <em className="sc-more" aria-hidden="true">See samples →</em>;
 
+  const cards = [
+    /* 1. Logo */
+    goals.logo && <figure key="logo" {...cardProps("logo", "See logo samples")}>
+      <div className="sc-art sc-logos">
+        <Svg className="sc-logo sc-logo-alt1" markup={logos.alt1} />
+        <Svg className="sc-logo sc-logo-alt2" markup={logos.alt2} />
+        <Svg className="sc-logo sc-logo-main" markup={logos.main} />
+      </div>
+      <figcaption className="sc-cap"><b>Logo</b><span>7 styles · PNG + SVG</span><More /></figcaption>
+    </figure>,
+
+    /* 2. Printed menu card */
+    goals.menucard && <figure key="menu" {...cardProps("menu", "See menu card samples")}>
+      <MenuCardArt demo={ROMA} name={brandName} tagline={brandTag} logo={logos.main} />
+      <figcaption className="sc-cap"><b>Menu card</b><span>Print, PDF &amp; TV screens</span><More /></figcaption>
+    </figure>,
+
+    /* 3. Online phone menu (with cart + "Add" buttons when ordering is picked) */
+    showPhone && <figure key="phone" {...cardProps("phone", "See online menu samples")}>
+      <PhoneArt demo={ROMA} name={brandName} ordering={ordering} />
+      <figcaption className="sc-cap">
+        <b>{ordering ? "Online menu + ordering" : "Online menu"}</b>
+        <span>{ordering ? "Customers scan a QR & order" : "Customers scan a QR to view"}</span>
+        <More />
+      </figcaption>
+    </figure>
+  ].filter(Boolean);
+  const modal = open && <SamplesModal kind={open} ordering={ordering} onClose={closeSamples} />;
+
+  // Phones: every card is its own slide in the first screen's slider (see TabGoals)
+  if (slides) return (
+    <>
+      {cards.map((card, n) => (
+        <section key={card.key} className="gs-slide gs-sample" aria-label={"Sample " + (n + 1) + " of " + cards.length}>
+          <div className="studio-card q-shell sc">
+            <p className="sc-eyebrow">What you'll create · {n + 1}/{cards.length}</p>
+            {card}
+            <p className="sc-lead">Tap the card to see samples.</p>
+          </div>
+        </section>
+      ))}
+      {modal}
+    </>
+  );
+
   return (
     <section className="sc" aria-labelledby="scTitle">
       <p id="scTitle" className="sc-eyebrow">What you'll create</p>
       <p className="sc-lead">A complete brand kit for your restaurant, ready in minutes. Tap a card to see samples.</p>
-
-      <div className="sc-grid">
-        {/* 1. Logo */}
-        {goals.logo && <figure {...cardProps("logo", "See logo samples")}>
-          <div className="sc-art sc-logos">
-            <Svg className="sc-logo sc-logo-alt1" markup={logos.alt1} />
-            <Svg className="sc-logo sc-logo-alt2" markup={logos.alt2} />
-            <Svg className="sc-logo sc-logo-main" markup={logos.main} />
-          </div>
-          <figcaption className="sc-cap"><b>Logo</b><span>7 styles · PNG + SVG</span><More /></figcaption>
-        </figure>}
-
-        {/* 2. Printed menu card */}
-        {goals.menucard && <figure {...cardProps("menu", "See menu card samples")}>
-          <MenuCardArt demo={ROMA} name={brandName} tagline={brandTag} logo={logos.main} />
-          <figcaption className="sc-cap"><b>Menu card</b><span>Print, PDF &amp; TV screens</span><More /></figcaption>
-        </figure>}
-
-        {/* 3. Online phone menu (with cart + "Add" buttons when ordering is picked) */}
-        {showPhone && <figure {...cardProps("phone", "See online menu samples")}>
-          <PhoneArt demo={ROMA} name={brandName} ordering={ordering} />
-          <figcaption className="sc-cap">
-            <b>{ordering ? "Online menu + ordering" : "Online menu"}</b>
-            <span>{ordering ? "Customers scan a QR & order" : "Customers scan a QR to view"}</span>
-            <More />
-          </figcaption>
-        </figure>}
-      </div>
-
-      {open && <SamplesModal kind={open} ordering={ordering} onClose={closeSamples} />}
+      <div className="sc-grid">{cards}</div>
+      {modal}
     </section>
   );
 }
