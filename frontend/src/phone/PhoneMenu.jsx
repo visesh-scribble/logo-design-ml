@@ -1,6 +1,7 @@
 // Phone menu: what customers see after scanning the QR code. They add dishes to a cart and order to their table.
 import { useEffect, useRef, useState } from "react";
 import { CUISINE_PHOTOS as CUISINE_PHOTO } from "../shared/photos.js";
+import LinksPage from "./LinksPage.jsx";
 
 const num = p => { const n = parseFloat(String(p).replace(/,/g, "")); return isNaN(n) ? 0 : n; };
 const STATUS_TEXT = { new: "Order received", preparing: "Being prepared 👨‍🍳", ready: "Ready! 🎉", done: "Served — enjoy your meal!" };
@@ -84,6 +85,14 @@ export default function PhoneMenu() {
   const [recs, setRecs] = useState([]);
   const recsFor = useRef("");
   const tableRef = useRef(null);
+  // "links" = the link page shown after scanning; "#menu" in the address opens the menu straight away
+  const [view, setView] = useState(location.hash === "#menu" ? "menu" : "links");
+  useEffect(() => {
+    const onHash = () => { setView(location.hash === "#menu" ? "menu" : "links"); window.scrollTo(0, 0); };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  const openMenu = () => { location.hash = "menu"; };   // phone Back button returns to the link page
 
   useEffect(() => {
     fetch("/api/published-menu" + (SLUG && SLUG !== "m" ? "?slug=" + encodeURIComponent(SLUG) : ""))
@@ -93,7 +102,7 @@ export default function PhoneMenu() {
         const { brand = {}, menu = {} } = res.data;
         const root = document.documentElement.style;
         if (brand.primaryColor) root.setProperty("--brand", brand.primaryColor);
-        if (brand.bgColor) root.setProperty("--bg", brand.bgColor);
+        if (brand.bgColor) { root.setProperty("--bg", brand.bgColor); document.querySelector("meta[name=theme-color]")?.setAttribute("content", brand.bgColor); }
         document.title = (brand.name || "Our") + " Menu";
         if (!(menu.categories || []).length) throw new Error("This menu has no items yet.");
         setData(res.data);
@@ -171,9 +180,14 @@ export default function PhoneMenu() {
   const headerPhoto = CUISINE_PHOTO[brand.cuisine] || CUISINE_PHOTO.other;
   const priceText = it => it.price !== "" && it.price != null ? money(num(it.price)) : "";
 
+  if (data && view === "links") {
+    return <LinksPage brand={brand} shop={shop} mapUrl={mapUrl} photo={headerPhoto} onMenu={openMenu} />;
+  }
+
   return (
     <>
-      <header style={data ? { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.75)), url(https://images.unsplash.com/${headerPhoto}?w=900&q=70&auto=format&fit=crop)` } : undefined}>
+      <header style={data ? { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.75)), url(https://images.unsplash.com/${headerPhoto}?w=${window.innerWidth > 900 ? 1800 : 900}&q=70&auto=format&fit=crop)` } : undefined}>
+        {data && <a className="back-home" href="#" onClick={e => { e.preventDefault(); location.hash = ""; }}>‹ Home</a>}
         <h1 id="brandName">{brand.name || "Menu"}</h1><p id="tagline">{brand.tagline || ""}</p>
       </header>
       <nav id="catNav">{data && cats.map((c, i) => <a key={i} href={"#cat" + i}>{c.name}</a>)}</nav>

@@ -164,9 +164,10 @@ function LocationQr() {
 }
 
 const TOOL_TABS = [
-  ["layout", LayoutGrid, "Layout", "Columns, prices and your shop details"],
-  ["dishes", List, "Dishes", "Edit, upload or paste your dishes"],
   ["style", Palette, "Style", "Pick a design for your menu"],
+  ["qr", QrCode, "QR & Info", "Shop details, links and your QR codes"],
+  ["layout", LayoutGrid, "Layout", "Columns and prices"],
+  ["dishes", List, "Dishes", "Edit, upload or paste your dishes"],
   ["details", SlidersHorizontal, "Details", "Choose what shows on the board"]
 ];
 
@@ -193,7 +194,7 @@ function SettingsPanel({ sheet, open, onClose }) {
       <span className="ms-toggle"><input type="checkbox" id={id} checked={m[key]} onChange={e => s.setMenu({ [key]: e.target.checked })} /><i /></span></label>
   );
   const shopField = (Tag, id, key, placeholder, label, extra = {}) => (
-    <Tag id={id} className="ms-field" placeholder={placeholder} aria-label={label} value={m.shop[key]} onChange={e => s.setShop({ [key]: e.target.value })} {...extra} />
+    <Tag id={id} className="ms-field" placeholder={placeholder} aria-label={label} value={m.shop[key] ?? ""} onChange={e => s.setShop({ [key]: e.target.value })} {...extra} />
   );
 
   const body = (
@@ -272,7 +273,10 @@ function SettingsPanel({ sheet, open, onClose }) {
             ))}
           </div>
         </div>
+      </div>
 
+      {/* QR & INFO: shop details, QR page links, menu QR and location QR */}
+      <div className={pane("qr")} id="ms-p-qr" role="tabpanel">
         {/* SHOP ADDRESS & DETAILS */}
         <div className="ms-grp">
           <span className="ms-lab">Shop address &amp; details</span>
@@ -283,6 +287,18 @@ function SettingsPanel({ sheet, open, onClose }) {
             {shopField("input", "shopExtra", "extra", "Other details, e.g. Free home delivery · Instagram @yourshop", "Other details", { type: "text" })}
           </div>
           <p className="ms-hint">Shown at the bottom of your menu board.</p>
+        </div>
+
+        {/* LINK PAGE (opens when customers scan the menu QR) */}
+        <div className="ms-grp">
+          <span className="ms-lab">Links on your QR page</span>
+          <div className="ms-stack">
+            {shopField("input", "shopInstagram", "instagram", "Instagram, e.g. @yourshop", "Instagram", { type: "text" })}
+            {shopField("input", "shopFacebook", "facebook", "Facebook page link or name", "Facebook", { type: "text" })}
+            {shopField("input", "shopWhatsapp", "whatsapp", "WhatsApp number, e.g. +91 98765 43210", "WhatsApp number", { type: "tel" })}
+            {shopField("input", "shopWebsite", "website", "Website, e.g. yourshop.com", "Website", { type: "url" })}
+          </div>
+          <p className="ms-hint">Scanning your menu QR opens a page with these buttons, plus View Menu, Call and Maps. Leave any blank to hide it.</p>
         </div>
 
         <MenuQr />
@@ -297,7 +313,7 @@ function SettingsPanel({ sheet, open, onClose }) {
           {toggle("toggleVegBadges", "showVegBadges", "Veg / non-veg marks", "Green and red dots")}
           {toggle("toggleShowDesc", "showDesc", "Dish descriptions", "Ingredients under each dish")}
           {toggle("toggleShowDietary", "showDietary", "Recipe tips", "How each dish is made")}
-          {toggle("toggleShowFooter", "showFooter", "Shop address & QR", "Strip at the bottom (fill it in under Layout)")}
+          {toggle("toggleShowFooter", "showFooter", "Shop address & QR", "Strip at the bottom (fill it in under QR &amp; Info)")}
         </div>
         <div className="ms-grp">
           <label className="ms-lab" htmlFor="menuHeaderSubtext">Announcement line</label>

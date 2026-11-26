@@ -64,11 +64,11 @@ const initialState = {
     ordering: true,              // phone menu lets customers order (false = view-only online menu)
     headerSubtext: "Crispy, Cheesy & Absolutely Delicious! • Perfect for Parties & Cravings",
     categories: withUids(JSON.parse(JSON.stringify(SAMPLE.categories))),
-    shop: { address: "", phone: "", hours: "", extra: "", locQr: false, mapLink: "", coords: "", menuQr: false, menuLink: "" }
+    shop: { address: "", phone: "", hours: "", extra: "", locQr: false, mapLink: "", coords: "", menuQr: false, menuLink: "", instagram: "", facebook: "", website: "", whatsapp: "", orderLink: "" }
   },
   aiAdded: {},                 // dish uid -> "Veg 97%, Spicy 84%"
   // menu studio UI
-  msTab: "layout",
+  msTab: "style",
   menuZoom: 100,
   menuZoomMode: "fit",           // "fit" = scale the board to the screen; "manual" = use menuZoom
   boardExporting: false,         // true while the PNG is being taken: board shown at 100%

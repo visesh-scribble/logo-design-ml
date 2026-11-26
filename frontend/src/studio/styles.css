@@ -1048,7 +1048,7 @@ textarea.ms-field{resize:vertical;font-family:var(--font-ui)}
   .ms-canvas{border-radius:14px;border:1px solid var(--line);box-shadow:none}
   .ms-canvas .ms-stage{padding:12px}
   #tab-menu{padding-bottom:84px}
-  .ms-dock{position:fixed;left:0;right:0;bottom:var(--foot-h);z-index:45;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.25rem;background:var(--surface);border-top:1px solid var(--line);padding:.35rem max(10px,env(safe-area-inset-right)) .35rem max(10px,env(safe-area-inset-left));box-shadow:0 -8px 20px -14px rgba(0,0,0,.35)}
+  .ms-dock{position:fixed;left:0;right:0;bottom:var(--foot-h);z-index:45;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.25rem;background:var(--surface);border-top:1px solid var(--line);padding:.35rem max(10px,env(safe-area-inset-right)) .35rem max(10px,env(safe-area-inset-left));box-shadow:0 -8px 20px -14px rgba(0,0,0,.35)}
   .ms-dock-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.2rem;min-height:52px;border:0;background:none;border-radius:10px;font-family:var(--font-ui);font-size:.72rem;font-weight:600;color:var(--muted);cursor:pointer}
   .ms-dock-btn svg{width:20px;height:20px}
   .ms-dock-btn[aria-selected=true]{color:var(--accent);background:var(--accent-soft)}

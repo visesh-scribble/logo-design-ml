@@ -142,7 +142,7 @@ function sampleBoardState(key) {
       template: sample.template,
       currency: sample.currency,
       categories: sample.categories.map((c, ci) => ({ ...c, items: c.items.map((it, i) => ({ ...it, uid: `${key}-${ci}-${i}` })) })),
-      shop: { address: "", phone: "", hours: "", extra: "", locQr: false, menuQr: false, menuLink: "", mapLink: "", coords: "" },
+      shop: { address: "", phone: "", hours: "", extra: "", locQr: false, menuQr: false, menuLink: "", mapLink: "", coords: "", instagram: "", facebook: "", website: "", whatsapp: "", orderLink: "" },
       showFooter: false
     },
     brand: {
