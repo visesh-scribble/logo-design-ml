@@ -128,11 +128,12 @@ class JsonStore:
             self.orders.append(dict(order))
             self._write()
 
-    def set_order_status(self, order_id, status):
+    def set_order_status(self, order_id, status, extra=None):
         with self.lock:
             for o in self.orders:
                 if o.get("id") == order_id:
                     o["status"] = status
+                    o.update(extra or {})
             self._write()
 
 
@@ -256,8 +257,8 @@ class MongoStore:
     def add_order(self, order):
         self.orders.insert_one({**order, "_id": order["id"]})
 
-    def set_order_status(self, order_id, status):
-        self.orders.update_one({"_id": order_id}, {"$set": {"status": status, "updated_at": now_iso()}})
+    def set_order_status(self, order_id, status, extra=None):
+        self.orders.update_one({"_id": order_id}, {"$set": {**(extra or {}), "status": status, "updated_at": now_iso()}})
 
 
 def get_store():

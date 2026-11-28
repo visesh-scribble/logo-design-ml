@@ -4,7 +4,7 @@ import { CUISINE_PHOTOS as CUISINE_PHOTO } from "../shared/photos.js";
 import LinksPage from "./LinksPage.jsx";
 
 const num = p => { const n = parseFloat(String(p).replace(/,/g, "")); return isNaN(n) ? 0 : n; };
-const STATUS_TEXT = { new: "Order received", preparing: "Being prepared 👨‍🍳", ready: "Ready! 🎉", done: "Served — enjoy your meal!" };
+const STATUS_TEXT = { new: "Order received", preparing: "Being prepared 👨‍🍳", ready: "Ready! 🎉", done: "Served — enjoy your meal!", cancelled: "Your order was cancelled. Please ask staff." };
 
 // Page name = hotel name, e.g. /spice-garden.html -> slug "spice-garden" (m.html = latest menu)
 const SLUG = decodeURIComponent(location.pathname.split("/").pop().replace(/\.html$/, ""));
@@ -143,12 +143,12 @@ export default function PhoneMenu() {
 
   // Order status updates by itself when the kitchen changes it
   useEffect(() => {
-    if (!placed || !sheetOpen) return;
+    if (!placed || !sheetOpen || orderStatus === "cancelled") return;
     const t = setInterval(() => {
       fetch(`/api/orders/${placed.id}`).then(r => r.json()).then(res => { if (res.success) setOrderStatus(res.order.status); }).catch(() => {});
     }, 4000);
     return () => clearInterval(t);
-  }, [placed, sheetOpen]);
+  }, [placed, sheetOpen, orderStatus]);
 
   const openCart = () => { setPlaced(null); recsFor.current = ""; setSheetOpen(true); };
   const closeCart = () => setSheetOpen(false);
@@ -238,7 +238,7 @@ export default function PhoneMenu() {
                 <div style={{ fontWeight: 700 }}>Order placed!</div>
                 <div className="num">#{placed.id}</div>
                 <div style={{ color: "var(--muted)", fontSize: 14 }}>Table {placed.table} · {money(placed.total)}</div>
-                <div id="orderStatus" className={"status" + (orderStatus === "ready" || orderStatus === "done" ? " ready" : "")}>{STATUS_TEXT[orderStatus]}</div>
+                <div id="orderStatus" className={"status" + (orderStatus === "ready" || orderStatus === "done" ? " ready" : orderStatus === "cancelled" ? " cancelled" : "")}>{STATUS_TEXT[orderStatus]}</div>
                 <p className="hint">This screen updates by itself when the kitchen changes your order.</p>
                 <button className="primary" onClick={closeCart}>Back to Menu</button>
               </div>

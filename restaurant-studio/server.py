@@ -326,16 +326,25 @@ class RestaurantStudioHandler(SimpleHTTPRequestHandler):
                 return
             try:
                 order_id = int(path.split("/")[3])
-                status = json.loads(self.rfile.read(content_length).decode("utf-8")).get("status")
-                if status not in ("new", "preparing", "ready", "done"):
+                body = json.loads(self.rfile.read(content_length).decode("utf-8"))
+                status = body.get("status")
+                if status not in ("new", "preparing", "ready", "done", "cancelled"):
                     raise ValueError("Invalid status")
                 with ORDERS_LOCK:
                     order = next((o for o in ORDERS if o["id"] == order_id), None)
                 if order is None or order.get("slug") not in owner_slugs(owner["id"]):
                     self.send_json_response({"success": False, "error": "This order is not from your restaurant."}, status=403)
                     return
-                STORE.set_order_status(order_id, status)
+                if order.get("status") == "cancelled":
+                    raise ValueError("This order was cancelled and can't be changed.")
+                extra = None
+                if status == "cancelled":
+                    if order.get("status") == "done":
+                        raise ValueError("A served order can't be cancelled.")
+                    extra = {"cancel_reason": str(body.get("reason", "")).strip()[:200], "cancelled_at": now_iso()}
+                STORE.set_order_status(order_id, status, extra)
                 order["status"] = status
+                order.update(extra or {})
                 self.send_json_response({"success": True, "order": order})
             except Exception as e:
                 self.send_json_response({"success": False, "error": str(e)}, status=400)
