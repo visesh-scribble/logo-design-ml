@@ -1,1 +1,2 @@
-# No third-party packages needed; the server uses only the Python standard library.
+# MongoDB driver: used only when MONGO_URL is set (see storage.py). Without it the server needs nothing extra.
+pymongo>=4.10

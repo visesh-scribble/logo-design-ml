@@ -24,3 +24,20 @@
     .btns button { flex: 1; border: 0; border-radius: 10px; padding: 9px 6px; font-weight: 800; font-size: 12px; cursor: pointer; background: #f5f4ef; color: var(--ink); }
     .btns button.cur { background: var(--ink); color: #fff; }
     .empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 60px 0; }
+
+/* Owner login */
+.who { font-size: 13px; color: #d6d3d1; margin-top: 2px; }
+.head-right { display: flex; align-items: center; gap: 14px; }
+.logout { background: transparent; color: #fff; border: 1px solid #57534e; border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 13px; cursor: pointer; }
+.logout:hover { border-color: #fff; }
+.auth { max-width: 380px; margin: 48px auto; background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 26px 22px; display: flex; flex-direction: column; }
+.auth h2 { margin: 0; font-family: Georgia, serif; font-size: 22px; }
+.auth-sub { margin: 6px 0 14px; color: var(--muted); font-size: 14px; }
+.auth label { font-size: 13px; font-weight: 700; margin: 10px 0 5px; }
+.auth input { font: inherit; font-size: 16px; padding: 11px 12px; border: 1px solid #d6d3cb; border-radius: 10px; background: #fbfaf7; }
+.auth input:focus { outline: none; border-color: #15803d; }
+.auth-err { color: #b91c1c; font-size: 13px; min-height: 1em; margin: 10px 0 4px; }
+.auth-go { background: #15803d; color: #fff; border: 0; border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 800; cursor: pointer; }
+.auth-go:disabled { opacity: .6; }
+.auth-switch { background: none; border: 0; color: #15803d; font-weight: 700; font-size: 13px; margin-top: 12px; cursor: pointer; }
+@media (max-width: 480px) { .auth { margin: 20px 12px; } .head-right { width: 100%; justify-content: space-between; } }

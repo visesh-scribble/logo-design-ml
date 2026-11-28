@@ -11,6 +11,7 @@ import { Eyebrow } from "./WizardFooter.jsx";
 import MenuBoard, { useQr } from "./MenuBoard.jsx";
 import { handleMenuFile } from "./menuFiles.js";
 import { toggleFullScreenBoard, publishMenu } from "./menuExport.js";
+import { ensureLoggedIn } from "./Account.jsx";
 import { useMediaQuery, useFitZoom, BOARD_WIDTH } from "./ui.jsx";
 
 const MENU_TEMPLATES = [
@@ -68,12 +69,14 @@ function MenuQr() {
     const s = useStudio.getState();
     if (!s.menu.categories.length) { setMsg("Load or add a menu first."); return; }
     setMsg("Preparing your phone menu…");
-    publishMenu(s.brand, s.menu)
+    ensureLoggedIn()
+      .then(() => publishMenu(s.brand, s.menu))
       .then(link => {
         setShop({ menuLink: link });
         setMsg("Demo link: works only for phones on the same Wi-Fi as this computer, while the app is running. For real customers, paste your public menu link instead.");
       })
-      .catch(err => setMsg("Could not publish the menu: " + err.message + ". Restart the server (start.bat) and try again."));
+      .catch(err => setMsg(err.message === "AUTH_CANCELLED" ? "Log in or create an account to publish your phone menu."
+        : "Could not publish the menu: " + err.message));
   };
 
   return (

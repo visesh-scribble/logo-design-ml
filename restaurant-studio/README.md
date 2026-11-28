@@ -93,6 +93,19 @@ http://localhost:8080
 
 ---
 
+## 🗄️ Data storage (MongoDB)
+
+Published menus and orders are saved in **MongoDB** when `MONGO_URL` is set, otherwise in `data/state.json`.
+Render's free disk is wiped on every deploy, so use MongoDB there.
+
+1. MongoDB Atlas → **Network Access** → allow `0.0.0.0/0` (Render has no fixed IP).
+2. Locally: create `restaurant-studio/.env` (never committed) with one line:
+   `MONGO_URL=mongodb+srv://USER:PASSWORD@cluster0.xxxxx.mongodb.net/restaurant_studio?retryWrites=true&w=majority`
+   and run `python -m pip install pymongo`.
+3. Render → your service → **Environment** → add `MONGO_URL` with the same value.
+
+On the first start with an empty database, the menus and orders in `data/state.json` are imported automatically.
+
 ## 📁 Project Architecture
 ```
 restaurant-studio-wizard/

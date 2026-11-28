@@ -18,6 +18,8 @@ import threading
 import time
 
 import ml
+from storage import get_store, now_iso
+import auth
 
 # Menu published for the QR code / phone page (kept in memory while the server runs)
 PUBLISHED_MENU = {"data": None}
@@ -94,36 +96,43 @@ def build_order(payload):
     }
 
 
-DATA_DIR = os.environ.get("DATA_DIR") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-DATA_FILE = os.path.join(DATA_DIR, "state.json")
-SAVE_LOCK = threading.Lock()
-
-
-def save_state():
-    """Writes published menus and orders to disk so they survive a server restart."""
-    with ORDERS_LOCK:
-        state = {"latest": PUBLISHED_MENU["data"], "menus": dict(PUBLISHED_BY_SLUG), "orders": list(ORDERS)}
-    with SAVE_LOCK:
-        try:
-            os.makedirs(DATA_DIR, exist_ok=True)
-            tmp = DATA_FILE + ".tmp"
-            with open(tmp, "w", encoding="utf-8") as f:
-                json.dump(state, f)
-            os.replace(tmp, DATA_FILE)
-        except OSError as e:
-            print(f"Warning: could not save data: {e}")
+# Menus and orders live in MongoDB when MONGO_URL is set, else in data/state.json (see storage.py).
+# The dictionaries above are a fast in-memory copy; every change is written to the store first.
+STORE = None
+MENU_OWNER = {}          # slug -> owner id (menus published before logins existed have no owner yet)
+PUBLISH_LOCK = threading.Lock()
 
 
 def load_state():
-    try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            state = json.load(f)
-    except (OSError, ValueError):
-        return
-    PUBLISHED_MENU["data"] = state.get("latest")
-    PUBLISHED_BY_SLUG.update(state.get("menus") or {})
-    ORDERS.extend(state.get("orders") or [])
-    print(f" Loaded {len(PUBLISHED_BY_SLUG)} published menu(s) and {len(ORDERS)} order(s) from {DATA_FILE}")
+    global STORE
+    STORE = get_store()
+    latest, menus, orders = STORE.load()
+    PUBLISHED_MENU["data"] = latest
+    PUBLISHED_BY_SLUG.update(menus)
+    ORDERS.extend(orders)
+    MENU_OWNER.update(STORE.menu_owners())
+    print(f" Storage: {STORE.name}")
+    print(f" Loaded {len(PUBLISHED_BY_SLUG)} published menu(s) and {len(ORDERS)} order(s)")
+
+
+def owner_slugs(owner_id):
+    return {slug for slug, oid in MENU_OWNER.items() if oid == owner_id}
+
+
+def free_slug_for(base, owner_id):
+    """The owner's own page name, or base-2, base-3... when someone else already owns base."""
+    slug, n = base, 1
+    while MENU_OWNER.get(slug) not in (None, owner_id):
+        n += 1
+        slug = f"{base}-{n}"
+    return slug
+
+
+def owner_info(handler, owner):
+    base = public_base_url(handler)
+    rests = [{"slug": s, "name": ((PUBLISHED_BY_SLUG.get(s) or {}).get("brand") or {}).get("name", s), "url": f"{base}/{s}.html"}
+             for s in sorted(owner_slugs(owner["id"]))]
+    return {"email": owner["email"], "restaurants": rests}
 
 
 def public_base_url(handler):
@@ -193,11 +202,24 @@ class RestaurantStudioHandler(SimpleHTTPRequestHandler):
                 self.send_json_response({"success": True, "data": PUBLISHED_MENU["data"]})
             return
 
-        if path == "/api/orders":
-            with ORDERS_LOCK:
-                self.send_json_response({"orders": list(reversed(ORDERS))})
+        if path == "/api/auth/me":
+            owner = self.require_owner()
+            if owner:
+                self.send_json_response({"success": True, **owner_info(self, owner)})
             return
 
+        # Kitchen screen: only the logged-in owner's restaurants
+        if path == "/api/orders":
+            owner = self.require_owner()
+            if not owner:
+                return
+            mine = owner_slugs(owner["id"])
+            with ORDERS_LOCK:
+                orders = [o for o in reversed(ORDERS) if o.get("slug") in mine]
+            self.send_json_response({"success": True, "orders": orders})
+            return
+
+        # Customer's phone follows its order: status only, no names, tables or dishes
         if path.startswith("/api/orders/"):
             try:
                 order_id = int(path.split("/")[3])
@@ -206,7 +228,7 @@ class RestaurantStudioHandler(SimpleHTTPRequestHandler):
             with ORDERS_LOCK:
                 order = next((o for o in ORDERS if o["id"] == order_id), None)
             if order:
-                self.send_json_response({"success": True, "order": order})
+                self.send_json_response({"success": True, "order": {"id": order["id"], "status": order["status"]}})
             else:
                 self.send_json_response({"success": False, "error": "Order not found"}, status=404)
             return
@@ -245,15 +267,33 @@ class RestaurantStudioHandler(SimpleHTTPRequestHandler):
         url = urllib.parse.urlparse(self.path)
         path = url.path
 
+        if path in ("/api/auth/signup", "/api/auth/login"):
+            self.handle_login(signup=path.endswith("signup"))
+            return
+
+        if path == "/api/auth/logout":
+            auth.end_session(self, STORE)
+            self.send_json_response({"success": True}, cookie=auth.clear_cookie(self))
+            return
+
         if path == "/api/publish-menu":
             content_length = int(self.headers.get("Content-Length", 0))
             post_data = self.rfile.read(content_length)
             try:
                 data = json.loads(post_data.decode("utf-8", errors="replace"))
-                PUBLISHED_MENU["data"] = data
-                slug = slugify((data.get("brand") or {}).get("name", ""))
-                PUBLISHED_BY_SLUG[slug] = data
-                save_state()
+            except Exception as e:
+                self.send_json_response({"success": False, "error": str(e)}, status=400)
+                return
+            owner = self.require_owner()
+            if not owner:
+                return
+            try:
+                with PUBLISH_LOCK:
+                    slug = free_slug_for(slugify((data.get("brand") or {}).get("name", "")), owner["id"])
+                    STORE.save_menu(slug, data, owner["id"])
+                    MENU_OWNER[slug] = owner["id"]
+                    PUBLISHED_MENU["data"] = data
+                    PUBLISHED_BY_SLUG[slug] = data
                 self.send_json_response({"success": True, "slug": slug, "url": f"{public_base_url(self)}/{slug}.html"})
             except Exception as e:
                 self.send_json_response({"success": False, "error": str(e)}, status=400)
@@ -264,17 +304,26 @@ class RestaurantStudioHandler(SimpleHTTPRequestHandler):
             try:
                 payload = json.loads(self.rfile.read(content_length).decode("utf-8", errors="replace"))
                 order = build_order(payload)
-                with ORDERS_LOCK:
-                    order["id"] = len(ORDERS) + 1
-                    ORDERS.append(order)
-                save_state()
-                self.send_json_response({"success": True, "order": order})
             except Exception as e:
                 self.send_json_response({"success": False, "error": str(e)}, status=400)
+                return
+            try:
+                order["id"] = STORE.next_order_id()
+                order["created_at"] = now_iso()
+                STORE.add_order(order)
+                with ORDERS_LOCK:
+                    ORDERS.append(order)
+                self.send_json_response({"success": True, "order": order})
+            except Exception as e:
+                print(f"Warning: could not save order: {e}")
+                self.send_json_response({"success": False, "error": "Could not save your order. Please try again."}, status=500)
             return
 
         if path.startswith("/api/orders/") and path.endswith("/status"):
             content_length = int(self.headers.get("Content-Length", 0))
+            owner = self.require_owner()
+            if not owner:
+                return
             try:
                 order_id = int(path.split("/")[3])
                 status = json.loads(self.rfile.read(content_length).decode("utf-8")).get("status")
@@ -282,10 +331,11 @@ class RestaurantStudioHandler(SimpleHTTPRequestHandler):
                     raise ValueError("Invalid status")
                 with ORDERS_LOCK:
                     order = next((o for o in ORDERS if o["id"] == order_id), None)
-                    if order is None:
-                        raise ValueError("Order not found")
-                    order["status"] = status
-                save_state()
+                if order is None or order.get("slug") not in owner_slugs(owner["id"]):
+                    self.send_json_response({"success": False, "error": "This order is not from your restaurant."}, status=403)
+                    return
+                STORE.set_order_status(order_id, status)
+                order["status"] = status
                 self.send_json_response({"success": True, "order": order})
             except Exception as e:
                 self.send_json_response({"success": False, "error": str(e)}, status=400)
@@ -601,9 +651,52 @@ class RestaurantStudioHandler(SimpleHTTPRequestHandler):
             }
         return None
 
-    def send_json_response(self, data, status=200):
+    def require_owner(self):
+        """The logged-in owner, or None after sending a 401 ('please log in')."""
+        owner = auth.current_owner(self, STORE)
+        if not owner:
+            self.send_json_response({"success": False, "error": "Please log in.", "auth": False}, status=401)
+        return owner
+
+    def handle_login(self, signup):
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            payload = json.loads(self.rfile.read(length).decode("utf-8", errors="replace"))
+        except Exception:
+            self.send_json_response({"success": False, "error": "Bad request"}, status=400)
+            return
+        email = auth.normalize_email(payload.get("email"))
+        password = str(payload.get("password") or "")
+        if signup:
+            problem = auth.validate_signup(email, password)
+            if problem:
+                self.send_json_response({"success": False, "error": problem}, status=400)
+                return
+            pw_hash, salt = auth.hash_password(password)
+            try:
+                owner_id = STORE.create_owner(email, pw_hash, salt)
+            except ValueError:
+                self.send_json_response({"success": False, "error": "An account with this email already exists. Please log in."}, status=409)
+                return
+            owner = STORE.get_owner(owner_id)
+        else:
+            if auth.too_many_fails(email):
+                self.send_json_response({"success": False, "error": "Too many attempts. Please wait 15 minutes and try again."}, status=429)
+                return
+            owner = STORE.get_owner_by_email(email)
+            if not owner or not auth.check_password(password, owner["pw_hash"], owner["salt"]):
+                auth.record_fail(email)
+                self.send_json_response({"success": False, "error": "Wrong email or password."}, status=401)
+                return
+            auth.clear_fails(email)
+        token = auth.start_session(STORE, owner["id"])
+        self.send_json_response({"success": True, **owner_info(self, owner)}, cookie=auth.session_cookie(self, token))
+
+    def send_json_response(self, data, status=200, cookie=None):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
+        if cookie:
+            self.send_header("Set-Cookie", cookie)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")

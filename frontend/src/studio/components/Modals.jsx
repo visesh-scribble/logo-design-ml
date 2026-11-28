@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FileText, X, Edit3, Sparkles, Plus, QrCode } from "lucide-react";
 import { useStudio, cleanMenu } from "../store.js";
 import { publishMenu } from "./menuExport.js";
+import { AuthForm } from "./Account.jsx";
 import { parseRawTextLocally, qrDataUrl, downloadQrCard, fileBase } from "../../shared/files.js";
 
 function ModalShell({ id, maxW, extra = "", children }) {
@@ -192,18 +193,28 @@ export function QrMenuModal() {
   const [url, setUrl] = useState("");
   const [note, setNote] = useState("");
   const [qr, setQr] = useState("");
+  const [needLogin, setNeedLogin] = useState(false);   // publishing needs the owner's account
 
-  useEffect(() => {
-    if (!menu.categories.length) { setNote("Load or add a menu first, then open this again."); return; }
+  const publish = () => {
     setNote("Preparing your phone menu…");
-    const saved = menu.shop.menuQr && (menu.shop.menuLink || "").trim();
-    if (saved) { setUrl(saved); setNote("Using the online menu link from your menu board settings."); return; }
     publishMenu(brand, menu)
       .then(link => {
         setUrl(link);
-        setNote("Demo mode: this link works only for phones on the same Wi-Fi as this computer, while the app is running. For real customers, put the menu online and paste that link above.");
+        setNote(/localhost|^http:\/\/(\d+\.){3}\d+/.test(link)
+          ? "Demo mode: this link works only for phones on the same Wi-Fi as this computer, while the app is running."
+          : "Your menu is live. Print this QR for your tables.");
       })
-      .catch(err => setNote("Could not publish the menu: " + err.message + ". Restart the server (start.bat) and try again."));
+      .catch(err => {
+        if (err.code === "AUTH_REQUIRED") { setNeedLogin(true); setNote(""); }
+        else setNote("Could not publish the menu: " + err.message);
+      });
+  };
+
+  useEffect(() => {
+    if (!menu.categories.length) { setNote("Load or add a menu first, then open this again."); return; }
+    const saved = menu.shop.menuQr && (menu.shop.menuLink || "").trim();
+    if (saved) { setUrl(saved); setNote("Using the online menu link from your menu board settings."); return; }
+    publish();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -220,6 +231,10 @@ export function QrMenuModal() {
   return (
     <ModalShell id="qrMenuModal" maxW="max-w-md" extra="space-y-4 max-h-[95vh] overflow-y-auto">
       <ModalHead Icon={QrCode} title="QR Code Online Menu" />
+      {needLogin ? (
+        <AuthForm intro="Log in or create an account to publish your phone menu. Your orders will be private to your account."
+          onDone={me => { useStudio.setState({ owner: me }); setNeedLogin(false); publish(); }} />
+      ) : <>
       <p className="text-xs text-[#78716c]">Scan this with your phone camera. The menu opens on the phone.</p>
       <div id="qrCard" className="mx-auto w-64 rounded-2xl border border-[#e7e5e0] bg-white p-4 text-center">
         <p id="qrBrandName" className="font-serif font-bold text-base text-[#1c1917] mb-2">{brand.name}</p>
@@ -238,6 +253,7 @@ export function QrMenuModal() {
         <button onClick={() => window.open(url, "_blank")} className="px-4 py-2 bg-white border border-[#d6d3cb] hover:bg-[#f5f4ef] text-[#1c1917] font-semibold rounded-xl text-xs">Open Link</button>
         <button onClick={download} className="px-4 py-2 bg-[#1c1917] hover:bg-[#292524] text-white font-bold rounded-xl text-xs shadow-sm">Download QR (PNG)</button>
       </div>
+      </>}
     </ModalShell>
   );
 }

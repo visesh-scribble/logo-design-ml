@@ -12,6 +12,7 @@ import TabMenuAsk from "./components/TabMenuAsk.jsx";
 import TabMenu from "./components/TabMenu.jsx";
 import TabDownload from "./components/TabDownload.jsx";
 import { RawTextModal, ItemEditorModal, QrMenuModal } from "./components/Modals.jsx";
+import { AuthModal, AccountButton } from "./components/Account.jsx";
 import { useMenuFileDrop } from "./components/menuFiles.js";
 
 // THEME: light by default, sun/moon button in the top bar switches it (remembered on this device)
@@ -55,6 +56,7 @@ function AppBar() {
           <div className="stepper-meta"><span id="wizProgLabel">Step {n} of {flow.length}</span><i className="sep" /><span id="wizProgPhase">{def.phase}</span></div>
         </div>
         <div className="active-brand">
+          <AccountButton />
           <ThemeToggle />
           <Svg id="activeLogoMiniPreview" className="ab-mini" markup={logo.generate(s.brand)} />
           <div className="ab-text"><span className="ab-label">Your brand</span><span id="activeBrandNameDisplay" className="ab-name">{s.brand.name}</span></div>
@@ -92,6 +94,7 @@ export default function App() {
       {modal === "rawText" && <RawTextModal />}
       {modal === "editor" && <ItemEditorModal />}
       {modal === "qr" && <QrMenuModal />}
+      {modal === "auth" && <AuthModal />}
     </>
   );
 }

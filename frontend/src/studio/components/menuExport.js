@@ -1,5 +1,6 @@
 import { useStudio, cleanMenu } from "../store.js";
 import { fileBase, menuToCSV, saveBlobAs } from "../../shared/files.js";
+import { getMe } from "../../shared/auth.js";
 
 // High-res PNG of the board (2x). html2canvas is only downloaded the first time someone exports.
 export async function exportMenuPNG() {
@@ -28,11 +29,14 @@ export function exportMenuCSV() {
   saveBlobAs(new Blob([csv], { type: "text/csv;charset=utf-8;" }), `${fileBase(s.brand.name)}_menu.csv`);
 }
 
-// Publishes the menu to the local server and resolves with the phone-menu link.
+// Publishes the menu (owner must be logged in) and resolves with the phone-menu link.
+// Not logged in -> error with code "AUTH_REQUIRED".
 export async function publishMenu(brand, menu) {
-  const r = await fetch("/api/publish-menu", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand, menu: cleanMenu(menu) }) });
-  const res = await r.json();
+  const r = await fetch("/api/publish-menu", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand, menu: cleanMenu(menu) }) });
+  const res = await r.json().catch(() => ({}));
+  if (r.status === 401) { const e = new Error("Please log in to publish your menu."); e.code = "AUTH_REQUIRED"; useStudio.setState({ owner: null }); throw e; }
   if (!res.success) throw new Error(res.error || "Publish failed");
+  getMe().then(me => { if (me) useStudio.setState({ owner: me }); });   // refresh "my restaurants"
   return res.url;
 }
 

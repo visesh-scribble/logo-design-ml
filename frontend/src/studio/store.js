@@ -72,7 +72,8 @@ const initialState = {
   menuZoom: 100,
   menuZoomMode: "fit",           // "fit" = scale the board to the screen; "manual" = use menuZoom
   boardExporting: false,         // true while the PNG is being taken: board shown at 100%
-  modal: null                  // "rawText" | "editor" | "qr" | null
+  modal: null,                 // "rawText" | "editor" | "qr" | "auth" | null
+  owner: null                  // logged-in restaurant owner { email, restaurants } (see components/Account.jsx)
 };
 
 // ---------- helpers that work on the immer draft ----------

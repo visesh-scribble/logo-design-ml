@@ -9,3 +9,5 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.7
+      - key: MONGO_URL      # MongoDB Atlas connection string; set the value in Render > Environment
+        sync: false
